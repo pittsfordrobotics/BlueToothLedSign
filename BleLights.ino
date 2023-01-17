@@ -88,16 +88,12 @@ void resetLights() {
 void readBleSettings() {
   BLEDevice central = BLE.central();
   if (central) {
-    //Serial.print("Connected to central: ");
-    //Serial.println(central.address());
-
     if (BrightnessCharacteristic.written()) {
       Serial.println("Reading new value for brightness.");
       byte valByte = BrightnessCharacteristic.value();
       Serial.print("byte received: ");
       Serial.println(valByte, HEX);
       newBrightness = valByte;
-      BrightnessCharacteristic.setValue(newBrightness);
     }
 
     if (LightStyleCharacteristic.written()) {
@@ -106,7 +102,6 @@ void readBleSettings() {
       Serial.print("byte received: ");
       Serial.println(valByte, HEX);
       newStyle = valByte;
-      LightStyleCharacteristic.setValue(newStyle);
     }
   }
 }
