@@ -12,6 +12,7 @@ BLEService LEDService("99be4fac-c708-41e5-a149-74047f554cc1");
 // Characteristic to control LED brightness
 BLEByteCharacteristic BrightnessCharacteristic("5eccb54e-465f-47f4-ac50-6735bfc0e730", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic LightStyleCharacteristic("c99db9f7-1719-43db-ad86-d02d36b191b3", BLERead | BLENotify | BLEWrite);
+//BLEStringCharacteristic StringChar()
 
 // When setting up the NeoPixel library, we tell it how many pixels,
 // and which pin to use to send signals. Note that for older NeoPixel
@@ -19,10 +20,10 @@ BLEByteCharacteristic LightStyleCharacteristic("c99db9f7-1719-43db-ad86-d02d36b1
 // strandtest example for more information on possible values.
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 uint32_t colors[NUMPIXELS];
-uint16_t currentHue;
+uint16_t currentHue = 0;
 uint8_t currentBrightness = 50;
 uint8_t newBrightness = currentBrightness;
-uint8_t currentStyle = 0;
+uint8_t currentStyle = 3;
 uint8_t newStyle = currentStyle;
 
 int count = 0;
@@ -68,6 +69,7 @@ void startBLE() {
   BLE.setLocalName("Nano Button Device");
   BLE.setAdvertisedService(LEDService);
   BrightnessCharacteristic.setValue(currentBrightness);
+  LightStyleCharacteristic.setValue(currentStyle);
   LEDService.addCharacteristic(BrightnessCharacteristic);
   LEDService.addCharacteristic(LightStyleCharacteristic);
   BLE.addService(LEDService);
@@ -95,6 +97,7 @@ void readBleSettings() {
       Serial.print("byte received: ");
       Serial.println(valByte, HEX);
       newBrightness = valByte;
+      BrightnessCharacteristic.setValue(newBrightness);
     }
 
     if (LightStyleCharacteristic.written()) {
@@ -103,6 +106,7 @@ void readBleSettings() {
       Serial.print("byte received: ");
       Serial.println(valByte, HEX);
       newStyle = valByte;
+      LightStyleCharacteristic.setValue(newStyle);
     }
   }
 }
@@ -131,8 +135,12 @@ void updateLEDs() {
       showBlue();
       break;
     case 2:
-    default:
       showGreen();
+      break;
+    case 3:
+      rainbow();
+      break;
+    default:
       break;
   }
 }
@@ -165,8 +173,7 @@ void rainbow()
   uint32_t newColor = pixels.ColorHSV(currentHue);
   setAllColors(newColor);
   displayColors();
-  delay(100);
-  currentHue = currentHue + 500;
+  currentHue = currentHue + 70;
 }
 
 void shiftColorsRight(uint32_t newColor)
