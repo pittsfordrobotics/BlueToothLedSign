@@ -5,14 +5,13 @@
 #define NUMPIXELS 600 
 #define DELAYVAL 1 // Time (in milliseconds) to pause between iterations
 
-
 // Main BLE service
 BLEService LEDService("99be4fac-c708-41e5-a149-74047f554cc1");
 
 // Characteristic to control LED brightness
 BLEByteCharacteristic BrightnessCharacteristic("5eccb54e-465f-47f4-ac50-6735bfc0e730", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic LightStyleCharacteristic("c99db9f7-1719-43db-ad86-d02d36b191b3", BLERead | BLENotify | BLEWrite);
-//BLEStringCharacteristic StringChar()
+BLEStringCharacteristic StyleNamesCharacteristic("9022a1e0-3a1f-428a-bad6-3181a4d010a5", BLERead, 100);
 
 // When setting up the NeoPixel library, we tell it how many pixels,
 // and which pin to use to send signals. Note that for older NeoPixel
@@ -61,17 +60,23 @@ void loop()
 
 void startBLE() {
   Serial.println("Starting BLE...");
+  
   // begin initialization
   if (!BLE.begin()) {
     Serial.println("starting Bluetooth® Low Energy failed!");
   }
 
+  // dynamically construct the name list here...
+  String styles = "Red1;Blue1;Green1;Rainbow";
+
   BLE.setLocalName("Nano Button Device");
   BLE.setAdvertisedService(LEDService);
   BrightnessCharacteristic.setValue(currentBrightness);
   LightStyleCharacteristic.setValue(currentStyle);
+  StyleNamesCharacteristic.setValue(styles);
   LEDService.addCharacteristic(BrightnessCharacteristic);
   LEDService.addCharacteristic(LightStyleCharacteristic);
+  LEDService.addCharacteristic(StyleNamesCharacteristic);
   BLE.addService(LEDService);
   BLE.advertise();
 }
