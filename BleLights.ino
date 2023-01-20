@@ -9,38 +9,33 @@
 #define DEFAULTSTYLE 0
 #define DEFAULTBRIGHTNESS 70  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
+#define INITIALDELAY 2000     // Startup delay for debugging
 
 // Main BLE service and characteristics
 BLEService LEDService("99be4fac-c708-41e5-a149-74047f554cc1");
 BLEByteCharacteristic BrightnessCharacteristic("5eccb54e-465f-47f4-ac50-6735bfc0e730", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic LightStyleCharacteristic("c99db9f7-1719-43db-ad86-d02d36b191b3", BLERead | BLENotify | BLEWrite);
 BLEStringCharacteristic StyleNamesCharacteristic("9022a1e0-3a1f-428a-bad6-3181a4d010a5", BLERead, 100);
+// Need to add SpeedCharacteristic and StepCharacteristic
 
 // Pixel and color data
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 uint32_t colors[NUMPIXELS];
-uint8_t currentBrightness = DEFAULTBRIGHTNESS;
-uint8_t newBrightness = DEFAULTBRIGHTNESS;
-int currentStyle = -1; // Force the style to "change" on the first iteration.
-int newStyle = DEFAULTSTYLE;
 std::vector<LightStyle*> lightStyles;
 
-// For testing
-uint16_t currentHue = 0;
-int count = 0;
+// Settings that are updated via bluetooth
+uint8_t currentBrightness = DEFAULTBRIGHTNESS;
+uint8_t newBrightness = DEFAULTBRIGHTNESS;
+uint8_t currentStyle = -1; // Force the style to "change" on the first iteration.
+uint8_t newStyle = DEFAULTSTYLE;
 
-void initializeLightStyles() {
-  Serial.println("Initializing light styles");
-  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), colors, NUMPIXELS));  
-  lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), colors, NUMPIXELS));
-  lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), colors, NUMPIXELS));
-  Serial.print("First style: ");
-  Serial.println(lightStyles[0]->getName());
-}
+// For testing
+int loopCount = 1;
+unsigned long timestamp = 0;
 
 void setup() {
   // Delay for debugging
-  delay(2000);
+  delay(INITIALDELAY);
   Serial.begin(9600);
   Serial.println("Starting...");
 
@@ -48,7 +43,7 @@ void setup() {
   pixels.begin();
   pixels.setBrightness(DEFAULTBRIGHTNESS);
   Serial.println("Resetting pixels");
-  clearPixels();
+  initializePixels();
 
   // Define the light known light styles
   Serial.println("Initializing light styles");
@@ -58,9 +53,6 @@ void setup() {
   Serial.println("Starting BLE");
   startBLE();
 }
-
-int loopCount = 1;
-unsigned long timestamp = 0;
 
 void loop()
 {
@@ -77,6 +69,13 @@ void loop()
   readBleSettings();
   updateBrightness();
   updateLEDs();
+}
+
+void initializeLightStyles() {
+  Serial.println("Initializing light styles");
+  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), colors, NUMPIXELS));  
+  lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), colors, NUMPIXELS));
+  lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), colors, NUMPIXELS));
 }
 
 void startBLE() {
@@ -109,15 +108,6 @@ void startBLE() {
   BLE.advertise();
 }
 
-void clearPixels() {
-  currentHue = 0;
-  for (int i = 0; i < NUMPIXELS; i++)
-  {
-    colors[i] = 0;
-  }
-  pixels.clear();
-}
-
 void readBleSettings() {
   BLEDevice central = BLE.central();
   if (central) {
@@ -135,6 +125,10 @@ void readBleSettings() {
       Serial.print("byte received: ");
       Serial.println(valByte, HEX);
       newStyle = valByte;
+      // Sanity check
+      if (newStyle >= lightStyles.size()) {
+        newStyle = lightStyles.size() - 1;        
+      }
     }
   }
 }
@@ -149,38 +143,53 @@ void updateBrightness() {
 }
 
 void updateLEDs() {
-  //LightStyle *style = lightStyles.at(newStyle);
+  LightStyle *style = lightStyles[newStyle];
   if (currentStyle != newStyle)  
   {
     Serial.print("Changing style to ");
     Serial.println(newStyle);
     // Changing styles - reset the lights
-    lightStyles.at(newStyle)->reset();
-    lightStyles.at(newStyle)->setSpeed(DEFAULTSPEED);
+    style->reset();
+    style->setSpeed(DEFAULTSPEED);
+    //style->setSpeed(currentSpeed);
     currentStyle = newStyle;
   }
 
   // if speed changed, reset speed.
   // yeah, this gets done 2x for a style change.
-  //style->setSpeed(DEFAULTSPEED);
-  lightStyles.at(currentStyle)->update();
+//  if (currentSpeed != newSpeed) {
+//    style->setSpeed(newSpeed);
+//    currentSpeed = newSpeed;
+//  }
+
+  style->update();
   displayColors();  
 }
 
-void showRed() {
-  setAllColors(pixels.Color(255,0,0));
-  displayColors();  
+void initializePixels() {
+  for (int i = 0; i < NUMPIXELS; i++)
+  {
+    colors[i] = 0;
+  }
+  pixels.clear();
 }
 
-void showBlue() {
-  setAllColors(pixels.Color(0,0,255));
-  displayColors();  
+void displayColors()
+{
+  for (int i = 0; i < NUMPIXELS; i++)
+  {
+    pixels.setPixelColor(i, colors[i]);
+  }
+
+  pixels.show();
 }
 
-void showGreen() {
-  setAllColors(pixels.Color(0,255,0));
-  displayColors();  
-}
+// ************************************
+// Older routines past here.
+// They need to be migrated.
+// ************************************
+
+uint16_t currentHue = 0;
 
 void rainbowSwipe()
 {
@@ -215,47 +224,3 @@ void setAllColors(uint32_t newColor)
   }
 }
 
-void displayColors()
-{
-  for (int i = 0; i < NUMPIXELS; i++)
-  {
-    pixels.setPixelColor(i, colors[i]);
-  }
-
-  pixels.show();
-}
-
-void fadeIn(int red, int blue, int green)
-{
-  fade(red, blue, green, false);
-}
-
-void fadeOut(int red, int blue, int green)
-{
-  fade(red, blue, green, true);
-}
-
-void fade(int red, int blue, int green, bool shouldFadeOut)
-{
-  int smallDelay = 20;
-  int fadeStep = 1;
-  int currentFade = 0;
-  if (shouldFadeOut)
-  {
-    fadeStep = -1;
-    currentFade = 100;
-  }
-  while (currentFade <= 100 && currentFade >=0)
-  {
-    double multiplier = pow(currentFade / 100.0, 2);
-    Serial.print("Multiplier: ");
-    Serial.println(multiplier);
-    for (int i = 0; i < NUMPIXELS; i++)
-    {
-      pixels.setPixelColor(i, pixels.Color(red * multiplier, green * multiplier, blue * multiplier));
-    }
-    pixels.show();
-    delay(smallDelay);
-    currentFade += fadeStep;
-  }
-}
