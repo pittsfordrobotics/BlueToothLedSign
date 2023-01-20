@@ -1,48 +1,71 @@
 #include <Adafruit_NeoPixel.h>
 #include <ArduinoBLE.h>
+#include <vector>
+#include "LightStyle.h"
+#include "SingleColorStyle.h"
 
-#define PIN       18 // On Trinket or Gemma, suggest changing this to 1
+#define PIN       18 
 #define NUMPIXELS 600 
-#define DELAYVAL 1 // Time (in milliseconds) to pause between iterations
+#define DEFAULTSTYLE 0
+#define DEFAULTBRIGHTNESS 70  // Brightness should be between 0 and 255.
+#define DEFAULTSPEED 50       // Speed should be between 1 and 100.
 
-// Main BLE service
+// Main BLE service and characteristics
 BLEService LEDService("99be4fac-c708-41e5-a149-74047f554cc1");
-
-// Characteristic to control LED brightness
 BLEByteCharacteristic BrightnessCharacteristic("5eccb54e-465f-47f4-ac50-6735bfc0e730", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic LightStyleCharacteristic("c99db9f7-1719-43db-ad86-d02d36b191b3", BLERead | BLENotify | BLEWrite);
 BLEStringCharacteristic StyleNamesCharacteristic("9022a1e0-3a1f-428a-bad6-3181a4d010a5", BLERead, 100);
 
-// When setting up the NeoPixel library, we tell it how many pixels,
-// and which pin to use to send signals. Note that for older NeoPixel
-// strips you might need to change the third parameter -- see the
-// strandtest example for more information on possible values.
+// Pixel and color data
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 uint32_t colors[NUMPIXELS];
-uint16_t currentHue = 0;
-uint8_t currentBrightness = 50;
-uint8_t newBrightness = currentBrightness;
-uint8_t currentStyle = 3;
-uint8_t newStyle = currentStyle;
+uint8_t currentBrightness = DEFAULTBRIGHTNESS;
+uint8_t newBrightness = DEFAULTBRIGHTNESS;
+int currentStyle = -1; // Force the style to "change" on the first iteration.
+int newStyle = DEFAULTSTYLE;
+std::vector<LightStyle*> lightStyles;
 
+// For testing
+uint16_t currentHue = 0;
 int count = 0;
 
+void initializeLightStyles() {
+  Serial.println("Initializing light styles");
+  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), colors, NUMPIXELS));  
+  lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), colors, NUMPIXELS));
+  lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), colors, NUMPIXELS));
+  Serial.print("First style: ");
+  Serial.println(lightStyles[0]->getName());
+}
+
 void setup() {
+  // Delay for debugging
+  delay(2000);
   Serial.begin(9600);
   Serial.println("Starting...");
-  pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
-  pixels.setBrightness(currentBrightness);
+
+  // Initialize the NEOPixels
+  pixels.begin();
+  pixels.setBrightness(DEFAULTBRIGHTNESS);
   Serial.println("Resetting pixels");
-  resetLights();
+  clearPixels();
+
+  // Define the light known light styles
+  Serial.println("Initializing light styles");
+  initializeLightStyles();
+
+  // Start up BLE
   Serial.println("Starting BLE");
   startBLE();
 }
 
-int loopCount = 0;
+int loopCount = 1;
 unsigned long timestamp = 0;
 
 void loop()
 {
+  return;
+  // Loop timing...  remove eventually
   if (loopCount++ % 100 == 0)
   {
     unsigned long newtime = millis();
@@ -55,25 +78,31 @@ void loop()
   readBleSettings();
   updateBrightness();
   updateLEDs();
-  delay(DELAYVAL);
 }
 
 void startBLE() {
   Serial.println("Starting BLE...");
   
-  // begin initialization
   if (!BLE.begin()) {
     Serial.println("starting Bluetooth® Low Energy failed!");
   }
 
-  // dynamically construct the name list here...
-  String styles = "Red1;Blue1;Green1;Rainbow";
+  String allStyles = "";
+  for (int i = 0; i < lightStyles.size(); i++) {
+    allStyles += lightStyles[i]->getName();
+    if (i < lightStyles.size()-1) {
+      allStyles += ";";
+    }
+  }
 
-  BLE.setLocalName("Nano Button Device");
+  Serial.print("All style names: ");
+  Serial.println(allStyles);
+
+  BLE.setLocalName("3181 LED Controller");
   BLE.setAdvertisedService(LEDService);
-  BrightnessCharacteristic.setValue(currentBrightness);
-  LightStyleCharacteristic.setValue(currentStyle);
-  StyleNamesCharacteristic.setValue(styles);
+  BrightnessCharacteristic.setValue(DEFAULTBRIGHTNESS);
+  LightStyleCharacteristic.setValue(DEFAULTSTYLE);
+  StyleNamesCharacteristic.setValue(allStyles);
   LEDService.addCharacteristic(BrightnessCharacteristic);
   LEDService.addCharacteristic(LightStyleCharacteristic);
   LEDService.addCharacteristic(StyleNamesCharacteristic);
@@ -81,7 +110,7 @@ void startBLE() {
   BLE.advertise();
 }
 
-void resetLights() {
+void clearPixels() {
   currentHue = 0;
   for (int i = 0; i < NUMPIXELS; i++)
   {
@@ -91,6 +120,7 @@ void resetLights() {
 }
 
 void readBleSettings() {
+  Serial.println("Reading BLE");
   BLEDevice central = BLE.central();
   if (central) {
     if (BrightnessCharacteristic.written()) {
@@ -112,6 +142,7 @@ void readBleSettings() {
 }
 
 void updateBrightness() {
+  Serial.println("Updating brightness.");
   if (currentBrightness != newBrightness) {
     Serial.println("Brightness change detected.");
     pixels.setBrightness(newBrightness);
@@ -121,28 +152,25 @@ void updateBrightness() {
 }
 
 void updateLEDs() {
+  Serial.println("Updating LEDs");
+  //LightStyle *style = lightStyles.at(newStyle);
   if (currentStyle != newStyle)  
   {
-    resetLights();
-  } 
-
-  currentStyle = newStyle;
-  switch (currentStyle) {
-    case 0:
-      showRed();
-      break;
-    case 1:
-      showBlue();
-      break;
-    case 2:
-      showGreen();
-      break;
-    case 3:
-      rainbow();
-      break;
-    default:
-      break;
+    Serial.print("Changing style to ");
+    Serial.println(newStyle);
+    // Changing styles - reset the lights
+    lightStyles.at(newStyle)->reset();
+    lightStyles.at(newStyle)->setSpeed(DEFAULTSPEED);
+    currentStyle = newStyle;
   }
+
+  // if speed changed, reset speed.
+  // yeah, this gets done 2x for a style change.
+  //style->setSpeed(DEFAULTSPEED);
+  Serial.println("Calling style to update colors");
+  lightStyles.at(currentStyle)->update();
+  Serial.println("Displaying colors");
+  displayColors();  
 }
 
 void showRed() {
