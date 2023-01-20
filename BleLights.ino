@@ -64,7 +64,6 @@ unsigned long timestamp = 0;
 
 void loop()
 {
-  return;
   // Loop timing...  remove eventually
   if (loopCount++ % 100 == 0)
   {
@@ -120,7 +119,6 @@ void clearPixels() {
 }
 
 void readBleSettings() {
-  Serial.println("Reading BLE");
   BLEDevice central = BLE.central();
   if (central) {
     if (BrightnessCharacteristic.written()) {
@@ -142,7 +140,6 @@ void readBleSettings() {
 }
 
 void updateBrightness() {
-  Serial.println("Updating brightness.");
   if (currentBrightness != newBrightness) {
     Serial.println("Brightness change detected.");
     pixels.setBrightness(newBrightness);
@@ -152,7 +149,6 @@ void updateBrightness() {
 }
 
 void updateLEDs() {
-  Serial.println("Updating LEDs");
   //LightStyle *style = lightStyles.at(newStyle);
   if (currentStyle != newStyle)  
   {
@@ -167,9 +163,7 @@ void updateLEDs() {
   // if speed changed, reset speed.
   // yeah, this gets done 2x for a style change.
   //style->setSpeed(DEFAULTSPEED);
-  Serial.println("Calling style to update colors");
   lightStyles.at(currentStyle)->update();
-  Serial.println("Displaying colors");
   displayColors();  
 }
 
