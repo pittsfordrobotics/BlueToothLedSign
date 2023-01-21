@@ -7,7 +7,8 @@ class LightStyle {
   public:
     LightStyle(String name, uint32_t* colors, int numPixels);
     String getName();
-    void setSpeed(uint8_t speed);
+    void setSpeed(byte speed);
+    void setStep(byte step);
 
     virtual void reset() = 0;
     virtual void update() = 0;
@@ -18,7 +19,8 @@ class LightStyle {
     int m_numPixels;
     uint32_t* m_colors;
     String m_name;
-    uint8_t m_speed;
+    byte m_speed;
+    byte m_step;
 };
    
 #endif

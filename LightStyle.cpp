@@ -11,6 +11,10 @@ void LightStyle::setSpeed(uint8_t speed) {
   m_speed = speed;
 }
 
+void LightStyle::setStep(byte step) {
+  m_step = step;
+}
+
 String LightStyle::getName() {
   return m_name;
 }
