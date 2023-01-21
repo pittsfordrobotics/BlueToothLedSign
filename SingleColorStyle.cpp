@@ -37,8 +37,11 @@ void SingleColorStyle::reset()
 int SingleColorStyle::getIterationDelay() {
   // Convert "speed" to a delay.
   // Speed ranges from 1 to 100.
-  // Convert that to a delay of about 100ms to 1000ms.
-  int delay = -9.0*m_speed + 1009;
+  int minDelay = 20;
+  int maxDelay = 1000;
+  double m = (maxDelay - minDelay)/-99.0;
+  double b = maxDelay - m;
+  int delay = m_speed*m + b;
   return delay;
 }
 

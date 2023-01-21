@@ -70,7 +70,7 @@ void loop()
     unsigned long newtime = millis();
     unsigned long diff = newtime - timestamp;
     Serial.print(TIMINGITERATIONS);
-    Serial.print(" iterations: ");
+    Serial.print(" iterations (msec): ");
     Serial.println(diff);
     timestamp = newtime;
   }
