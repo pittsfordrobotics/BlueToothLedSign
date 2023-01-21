@@ -3,6 +3,7 @@
 #include <vector>
 #include "LightStyle.h"
 #include "SingleColorStyle.h"
+#include "TwoColorStyle.h"
 
 #define PIN       18 
 #define NUMPIXELS 600 
@@ -80,10 +81,14 @@ void loop()
 }
 
 void initializeLightStyles() {
+  uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 255);
   Serial.println("Initializing light styles");
+  lightStyles.push_back(new SingleColorStyle("Pink", pink, colors, NUMPIXELS));
   lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), colors, NUMPIXELS));  
   lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), colors, NUMPIXELS));
   lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), colors, NUMPIXELS));
+  lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, colors, NUMPIXELS));
+  lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, colors, NUMPIXELS));
 }
 
 void startBLE() {

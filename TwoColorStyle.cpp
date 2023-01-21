@@ -69,8 +69,8 @@ int TwoColorStyle::getModulus() {
   int minMod = 2;
   int maxMod = 10;
   int x = abs(m_step - 50);
-  double m = (maxMod - minMod)/-50.0;
-  double b = minMod - m;
+  double m = (maxMod - minMod)/50.0;
+  double b = minMod;
   int mod = x*m + b;
   return mod;
 }
