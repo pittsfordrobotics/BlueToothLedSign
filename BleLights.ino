@@ -21,7 +21,6 @@ BLEStringCharacteristic StyleNamesCharacteristic("9022a1e0-3a1f-428a-bad6-3181a4
 BLEByteCharacteristic SpeedCharacteristic("b975e425-62e4-4b08-a652-d64ad5097815", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic StepCharacteristic("70e51723-0771-4946-a5b3-49693e9646b5", BLERead | BLENotify | BLEWrite);
 
-
 // Pixel and color data
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 uint32_t colors[NUMPIXELS];
@@ -182,8 +181,9 @@ void updateLEDs() {
     Serial.print("Changing style to ");
     Serial.println(newStyle);
     // Changing styles - reset the lights
-    style->reset();
     style->setSpeed(currentSpeed);
+    style->setStep(currentStep);
+    style->reset();
     currentStyle = newStyle;
   }
 

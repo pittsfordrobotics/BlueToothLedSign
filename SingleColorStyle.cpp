@@ -12,8 +12,9 @@ void SingleColorStyle::update() {
     return;
   }
 
+  int mod = getModulus();
   uint32_t newColor = m_color;
-  if (m_iterationCount % 3 == 0) {
+  if (m_iterationCount % mod == 0) {
     newColor = 0;
   }
 
@@ -24,9 +25,9 @@ void SingleColorStyle::update() {
 
 void SingleColorStyle::reset()
 {
-  // Set every 3rd pixel off
+  int mod = getModulus();
   for (int i = 0; i < m_numPixels; i++) {
-    if (i % 3 == 0) {
+    if (i % mod == 0) {
       m_colors[i] = 0;
     } else {
       m_colors[i] = m_color;
@@ -43,6 +44,17 @@ int SingleColorStyle::getIterationDelay() {
   double b = maxDelay - m;
   int delay = m_speed*m + b;
   return delay;
+}
+
+int SingleColorStyle::getModulus() {
+  // Convert "step" to a modulus -- every "modulus" pixel will be off.
+  // Step ranges from 1 to 100.
+  int minMod = 2;
+  int maxMod = 10;
+  double m = (maxMod - minMod)/99.0;
+  double b = minMod - m;
+  int mod = m_step*m + b;
+  return mod;
 }
 
 

@@ -13,6 +13,7 @@ class SingleColorStyle : public LightStyle {
 
   private:
     int getIterationDelay();
+    int getModulus();
 
     uint32_t m_color;
     int m_iterationCount;
