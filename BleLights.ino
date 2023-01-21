@@ -4,10 +4,11 @@
 #include "LightStyle.h"
 #include "SingleColorStyle.h"
 #include "TwoColorStyle.h"
+#include "RainbowStyle.h"
 
 #define PIN       18 
 #define NUMPIXELS 600 
-#define DEFAULTSTYLE 0
+#define DEFAULTSTYLE 6
 #define DEFAULTBRIGHTNESS 70  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
 #define DEFAULTSTEP  50       // Step should be between 1 and 100.
@@ -81,7 +82,7 @@ void loop()
 }
 
 void initializeLightStyles() {
-  uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 255);
+  uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 212);
   Serial.println("Initializing light styles");
   lightStyles.push_back(new SingleColorStyle("Pink", pink, colors, NUMPIXELS));
   lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), colors, NUMPIXELS));  
@@ -89,6 +90,7 @@ void initializeLightStyles() {
   lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), colors, NUMPIXELS));
   lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, colors, NUMPIXELS));
   lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, colors, NUMPIXELS));
+  lightStyles.push_back(new RainbowStyle("Rainbow", colors, NUMPIXELS));
 }
 
 void startBLE() {
