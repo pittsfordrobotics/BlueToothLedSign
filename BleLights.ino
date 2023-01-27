@@ -6,7 +6,7 @@
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
 
-#define PIN       18 
+#define PIN       26
 #define NUMPIXELS 600 
 #define DEFAULTSTYLE 6
 #define DEFAULTBRIGHTNESS 70  // Brightness should be between 0 and 255.
