@@ -6,14 +6,21 @@
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
 
-#define PIN       26
-#define NUMPIXELS 600 
-#define DEFAULTSTYLE 6
-#define DEFAULTBRIGHTNESS 70  // Brightness should be between 0 and 255.
+#define DATA_OUT 26           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
+#define NUMPIXELS 600         // The total number of pixels to control.
+#define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
+#define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
 #define DEFAULTSTEP  50       // Step should be between 1 and 100.
-#define INITIALDELAY 2000     // Startup delay for debugging
-#define TIMINGITERATIONS 500
+#define INITIALDELAY 1000     // Startup delay for debugging
+#define TIMINGITERATIONS 500  // The number of iterations between timing messages
+
+// Manual style button configuration.
+// The input/output pin numbers are the Digital pin numbers.
+int inputPins[] = {15, 16, 17, 18};
+int outputPins[] = {19, 4, 3, 2};
+// The manual values styles are indexes into the lightStyles vector.
+int manualStyles[] = {1, 3, 0, 6};
 
 // Main BLE service and characteristics
 BLEService LEDService("99be4fac-c708-41e5-a149-74047f554cc1");
@@ -24,7 +31,7 @@ BLEByteCharacteristic SpeedCharacteristic("b975e425-62e4-4b08-a652-d64ad5097815"
 BLEByteCharacteristic StepCharacteristic("70e51723-0771-4946-a5b3-49693e9646b5", BLERead | BLENotify | BLEWrite);
 
 // Pixel and color data
-Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels(NUMPIXELS, DATA_OUT, NEO_GRB + NEO_KHZ800);
 uint32_t colors[NUMPIXELS];
 std::vector<LightStyle*> lightStyles;
 
@@ -38,7 +45,7 @@ byte newSpeed = DEFAULTSPEED;
 byte currentStep = DEFAULTSTEP;
 byte newStep = DEFAULTSTEP;
 
-// For testing
+// For timing information
 int loopCount = 1;
 unsigned long timestamp = 0;
 
@@ -47,6 +54,9 @@ void setup() {
   delay(INITIALDELAY);
   Serial.begin(9600);
   Serial.println("Starting...");
+
+  // Initialize digital input/output for manual style selection
+  initializeIO();
 
   // Initialize the NEOPixels
   pixels.begin();
@@ -70,20 +80,37 @@ void loop()
   {
     unsigned long newtime = millis();
     unsigned long diff = newtime - timestamp;
+    double timePerIteration = (double)diff / TIMINGITERATIONS;
     Serial.print(TIMINGITERATIONS);
     Serial.print(" iterations (msec): ");
-    Serial.println(diff);
+    Serial.print(diff);
+    Serial.print("; avg per iteration (msec): ");
+    Serial.println(timePerIteration);
     timestamp = newtime;
   }
 
+  // TEST CODE
+  // To be done if manual selection was detected:
+  // Write style choice back to the BLE characteristic
+  // Reset brightness and speed/step to defaults? Or leave as-was?
+  // When updating via BLE, turn off any manually set LEDs.
+  readManualStyleButtons();
+  
   readBleSettings();
   updateBrightness();
   updateLEDs();
 }
 
+void initializeIO() {
+  for (int i = 0; i < 4; i++) {
+    pinMode(inputPins[i], INPUT_PULLUP);
+    pinMode(outputPins[i], OUTPUT);
+    digitalWrite(outputPins[i], LOW);
+  }
+}
+
 void initializeLightStyles() {
   uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 212);
-  Serial.println("Initializing light styles");
   lightStyles.push_back(new SingleColorStyle("Pink", pink, colors, NUMPIXELS));
   lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), colors, NUMPIXELS));  
   lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), colors, NUMPIXELS));
@@ -172,6 +199,21 @@ byte readByteFromCharacteristic(BLEByteCharacteristic characteristic, byte minVa
       return valByte;
 }
 
+void readManualStyleButtons() {
+  // check the status of the buttons and set leds
+  // input = low -> activate led
+  for (int i = 0; i < 4; i++) {
+    if (digitalRead(inputPins[i]) == LOW) {
+      newStyle = manualStyles[i];
+      // Set speed/step to default?
+      for (int j = 0; j < 4; j++) {
+        digitalWrite(outputPins[j], LOW);
+      }
+      digitalWrite(outputPins[i], HIGH);
+    }
+  }
+}
+
 void updateBrightness() {
   if (currentBrightness != newBrightness) {
     Serial.println("Brightness change detected.");
@@ -225,44 +267,3 @@ void displayColors()
 
   pixels.show();
 }
-
-// ************************************
-// Older routines past here.
-// They need to be migrated.
-// ************************************
-
-uint16_t currentHue = 0;
-
-void rainbowSwipe()
-{
-  uint32_t newColor = pixels.ColorHSV(currentHue);
-  shiftColorsRight(newColor);
-  displayColors();
-  currentHue = currentHue + 500;
-}
-
-void rainbow()
-{
-  uint32_t newColor = pixels.ColorHSV(currentHue);
-  setAllColors(newColor);
-  displayColors();
-  currentHue = currentHue + 70;
-}
-
-void shiftColorsRight(uint32_t newColor)
-{
-  for (int i = NUMPIXELS - 1; i >= 1; i--)
-  {
-    colors[i] = colors[i - 1];
-  }
-  colors[0] = newColor;
-}
-
-void setAllColors(uint32_t newColor)
-{
-  for (int i = 0; i < NUMPIXELS; i++)
-  {
-    colors[i] = newColor;
-  }
-}
-
