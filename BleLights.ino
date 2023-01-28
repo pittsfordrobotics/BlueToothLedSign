@@ -6,7 +6,7 @@
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
 
-#define DATA_OUT 26           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
+#define DATA_OUT 27           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
 #define NUMPIXELS 600         // The total number of pixels to control.
 #define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
@@ -17,6 +17,7 @@
 
 // Manual style button configuration.
 // The input/output pin numbers are the Digital pin numbers.
+bool manualOverrideEnabled = false;
 int inputPins[] = {15, 16, 17, 18};
 int outputPins[] = {19, 4, 3, 2};
 // The manual values styles are indexes into the lightStyles vector.
@@ -55,8 +56,10 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Starting...");
 
-  // Initialize digital input/output for manual style selection
-  initializeIO();
+  if (manualOverrideEnabled) {
+    // Initialize digital input/output for manual style selection
+    initializeIO();
+  }
 
   // Initialize the NEOPixels
   pixels.begin();
@@ -89,19 +92,22 @@ void loop()
     timestamp = newtime;
   }
 
-  // TEST CODE
-  // To be done if manual selection was detected:
-  // Write style choice back to the BLE characteristic
-  // Reset brightness and speed/step to defaults? Or leave as-was?
-  // When updating via BLE, turn off any manually set LEDs.
-  readManualStyleButtons();
-  
+  if (manualOverrideEnabled) {
+    // TEST CODE
+    // To be done if manual selection was detected:
+    // Write style choice back to the BLE characteristic
+    // Reset brightness and speed/step to defaults? Or leave as-was?
+    // When updating via BLE, turn off any manually set LEDs.
+    readManualStyleButtons();
+  }
+
   readBleSettings();
   updateBrightness();
   updateLEDs();
 }
 
 void initializeIO() {
+  Serial.println("Initializing manual override I/O pins.");
   for (int i = 0; i < 4; i++) {
     pinMode(inputPins[i], INPUT_PULLUP);
     pinMode(outputPins[i], OUTPUT);
@@ -137,6 +143,8 @@ void startBLE() {
 
   Serial.print("All style names: ");
   Serial.println(allStyles);
+  Serial.print("Style name string length: ");
+  Serial.println(allStyles.length());
 
   BLE.setLocalName("3181 LED Controller");
   BLE.setAdvertisedService(LEDService);
