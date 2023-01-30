@@ -6,7 +6,7 @@
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
 
-#define DATA_OUT 26           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
+#define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
 #define NUMPIXELS 600         // The total number of pixels to control.
 #define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
@@ -18,8 +18,8 @@
 // Manual style button configuration.
 // The input/output pin numbers are the Digital pin numbers.
 bool manualOverrideEnabled = true;
-int inputPins[] = {15, 16, 17, 18};
-int outputPins[] = {19, 4, 3, 2};
+int inputPins[] = {3, 4, 5, 6};
+int outputPins[] = {9, 10, 8, 7};
 // The manual values styles are indexes into the lightStyles vector.
 int manualStyles[] = {1, 3, 0, 6};
 
