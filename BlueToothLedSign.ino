@@ -53,14 +53,16 @@ byte newStep = DEFAULTSTEP;
 byte inLowPowerMode = false;      // This should be a boolean, but there are no bool types.
 
 // For timing and debug information
-int loopCount = 1;
-unsigned long timestamp = 0;
+#define DEBUGINTERVAL 2000        // The amount of time (in msec) between timing calculations.
+int loopCounter = 0;
+unsigned long lastTimestamp = 0;
 
 void setup() {
   // Delay for debugging
   delay(INITIALDELAY);
   Serial.begin(9600);
   Serial.println("Starting...");
+  lastTimestamp = millis();
 
   if (manualOverrideEnabled) {
     // Initialize digital input/output for manual style selection
@@ -345,19 +347,22 @@ int getVoltageInputLevel()
 
 void printTimingAndDebugInfo()
 {
-  if (loopCount++ % TIMINGITERATIONS == 0)
+  loopCounter++;
+  unsigned long timestamp = millis();
+
+  if (timestamp > lastTimestamp + DEBUGINTERVAL)
   {
     // Calculate loop timing data
-    unsigned long newtime = millis();
-    unsigned long diff = newtime - timestamp;
-    double timePerIteration = (double)diff / TIMINGITERATIONS;
-    Serial.print(TIMINGITERATIONS);
+    unsigned long diff = timestamp - lastTimestamp;
+    double timePerIteration = (double)diff / loopCounter;
+    Serial.print(loopCounter);
     Serial.print(" iterations (msec): ");
     Serial.print(diff);
     Serial.print("; avg per iteration (msec): ");
     Serial.println(timePerIteration);
-    timestamp = newtime;
-
+    lastTimestamp = timestamp;
+    loopCounter = 0;
+    
     // Output voltage info periodically
     int rawLevel = getVoltageInputLevel();
     double voltage = getCalculatedBatteryVoltage();
