@@ -12,8 +12,9 @@
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
 #define DEFAULTSTEP  50       // Step should be between 1 and 100.
-#define INITIALDELAY 1000     // Startup delay for debugging
-#define TIMINGITERATIONS 500  // The number of iterations between timing messages
+#define INITIALDELAY 1000     // Startup delay for debugging.
+#define TIMINGITERATIONS 100  // The number of iterations between timing messages.
+#define VOLTAGEINPUTPIN 14    // The pin # for the analog input to detect battery voltage level.
 
 // Manual style button configuration.
 // The input/output pin numbers are the Digital pin numbers.
@@ -46,7 +47,12 @@ byte newSpeed = DEFAULTSPEED;
 byte currentStep = DEFAULTSTEP;
 byte newStep = DEFAULTSTEP;
 
-// For timing information
+// Battery power monitoring.
+#define LOWPOWERTHRESHOLD 5.9     // The voltage below which the system will go into "low power" mode.
+#define NORMALPOWERTHRESHOLD 6.9  // The voltage above which the system will recover from "low power" mode.
+byte inLowPowerMode = false;      // This should be a boolean, but there are no bool types.
+
+// For timing and debug information
 int loopCount = 1;
 unsigned long timestamp = 0;
 
@@ -60,6 +66,8 @@ void setup() {
     // Initialize digital input/output for manual style selection
     initializeManualIO();
   }
+
+  pinMode(VOLTAGEINPUTPIN, INPUT);
 
   // Initialize the NEOPixels
   pixels.begin();
@@ -78,27 +86,17 @@ void setup() {
 
 void loop()
 {
-  // Loop timing...  remove eventually
-  if (loopCount++ % TIMINGITERATIONS == 0)
-  {
-    unsigned long newtime = millis();
-    unsigned long diff = newtime - timestamp;
-    double timePerIteration = (double)diff / TIMINGITERATIONS;
-    Serial.print(TIMINGITERATIONS);
-    Serial.print(" iterations (msec): ");
-    Serial.print(diff);
-    Serial.print("; avg per iteration (msec): ");
-    Serial.println(timePerIteration);
-    timestamp = newtime;
+  printTimingAndDebugInfo();
+  checkForLowPowerState();
+
+  if (inLowPowerMode) {
+    // blink LEDs and exit.
+    blinkManualStyleIndicators();
+    return;    
   }
 
   readBleSettings();
   if (manualOverrideEnabled) {
-    // TEST CODE
-    // To be done if manual selection was detected:
-    // Write style choice back to the BLE characteristic
-    // Reset brightness and speed/step to defaults? Or leave as-was?
-    // When updating via BLE, turn off any manually set LEDs.
     readManualStyleButtons();
   }
 
@@ -226,6 +224,20 @@ void resetManualStyleIndicators() {
   }  
 }
 
+void blinkManualStyleIndicators() {
+  // Turn all indicators on
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(outputPins[i], HIGH);
+  }
+  delay(500);
+
+  // Turn all indicators back off
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(outputPins[i], LOW);
+  }
+  delay(500);
+}
+
 void updateBrightness() {
   if (currentBrightness != newBrightness) {
     Serial.println("Brightness change detected.");
@@ -278,4 +290,80 @@ void displayColors()
   }
 
   pixels.show();
+}
+
+// Low-voltage detection code - should move to a helper class
+void checkForLowPowerState()
+{
+  double currentVoltage = getCalculatedBatteryVoltage();
+  if (currentVoltage < LOWPOWERTHRESHOLD) {
+    if (inLowPowerMode) {
+      // Already in low power mode - nothing to do.
+    } else {
+      Serial.print("Battery voltage is below threshold. Voltage: ");
+      Serial.print(currentVoltage);
+      Serial.print(", threshold: ");
+      Serial.println(LOWPOWERTHRESHOLD);
+      Serial.println("Entering low power mode.");
+      // Enter low power mode. Disable LEDs and BLE.
+      pixels.clear();
+      pixels.show();
+      BLE.disconnect();
+      BLE.stopAdvertise();
+      inLowPowerMode = true;
+    }
+  }
+  if (currentVoltage > NORMALPOWERTHRESHOLD) {
+    if (!inLowPowerMode) {
+      // Not in low power mode - nothing to do.
+    } else {
+      Serial.print("Battery voltage is above normal threshold. Voltage: ");
+      Serial.print(currentVoltage);
+      Serial.print(", threshold: ");
+      Serial.println(NORMALPOWERTHRESHOLD);
+      Serial.println("Exiting low power mode.");
+      // Exit low power mode.  Re-enable BLE.
+      BLE.advertise();
+      inLowPowerMode = false;
+    }
+  }
+}
+
+double getCalculatedBatteryVoltage()
+{
+  // The analog input ranges from 0 (0V) to 1024 (3.3V), resulting in 0.00322 Volts per "tick".
+  // The battery voltage passes through a voltage divider such that the voltage at the input
+  // is 1/3 of the actual battery voltage.
+  double rawLevel = getVoltageInputLevel();
+  return rawLevel * 3 * 3.3 / 1024;
+}
+
+int getVoltageInputLevel()
+{
+  return analogRead(VOLTAGEINPUTPIN);
+}
+
+void printTimingAndDebugInfo()
+{
+  if (loopCount++ % TIMINGITERATIONS == 0)
+  {
+    // Calculate loop timing data
+    unsigned long newtime = millis();
+    unsigned long diff = newtime - timestamp;
+    double timePerIteration = (double)diff / TIMINGITERATIONS;
+    Serial.print(TIMINGITERATIONS);
+    Serial.print(" iterations (msec): ");
+    Serial.print(diff);
+    Serial.print("; avg per iteration (msec): ");
+    Serial.println(timePerIteration);
+    timestamp = newtime;
+
+    // Output voltage info periodically
+    int rawLevel = getVoltageInputLevel();
+    double voltage = getCalculatedBatteryVoltage();
+    Serial.print("Analog input: ");
+    Serial.print(rawLevel);
+    Serial.print("; calculated voltage: ");
+    Serial.println(voltage);
+  }
 }
