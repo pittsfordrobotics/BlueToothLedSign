@@ -15,6 +15,8 @@
 #define INITIALDELAY 1000     // Startup delay for debugging.
 #define TIMINGITERATIONS 100  // The number of iterations between timing messages.
 #define VOLTAGEINPUTPIN 14    // The pin # for the analog input to detect battery voltage level.
+#define LOWPOWERTHRESHOLD 5.9     // The voltage below which the system will go into "low power" mode.
+#define NORMALPOWERTHRESHOLD 6.9  // The voltage above which the system will recover from "low power" mode.
 
 // Manual style button configuration.
 // The input/output pin numbers are the Digital pin numbers.
@@ -47,10 +49,7 @@ byte newSpeed = DEFAULTSPEED;
 byte currentStep = DEFAULTSTEP;
 byte newStep = DEFAULTSTEP;
 
-// Battery power monitoring.
-#define LOWPOWERTHRESHOLD 5.9     // The voltage below which the system will go into "low power" mode.
-#define NORMALPOWERTHRESHOLD 6.9  // The voltage above which the system will recover from "low power" mode.
-byte inLowPowerMode = false;      // This should be a boolean, but there are no bool types.
+byte inLowPowerMode = false;      // Indicates the system should be in "low power" mode. This should be a boolean, but there are no bool types.
 
 // For timing and debug information
 #define DEBUGINTERVAL 2000        // The amount of time (in msec) between timing calculations.
@@ -64,11 +63,9 @@ void setup() {
   Serial.println("Starting...");
   lastTimestamp = millis();
 
-  if (manualOverrideEnabled) {
-    // Initialize digital input/output for manual style selection
-    initializeManualIO();
-  }
+  initializeManualIO();
 
+  // Configure the analog input pin to be able to read the battery voltage
   pinMode(VOLTAGEINPUTPIN, INPUT);
 
   // Initialize the NEOPixels
@@ -98,10 +95,12 @@ void loop()
   }
 
   readBleSettings();
+
   if (manualOverrideEnabled) {
     readManualStyleButtons();
   }
 
+  // Apply any updates that were received via BLE or manually
   updateBrightness();
   updateLEDs();
 }
@@ -172,14 +171,7 @@ void readBleSettings() {
 
     if (LightStyleCharacteristic.written()) {
       Serial.println("Reading new value for style.");
-      byte valByte = LightStyleCharacteristic.value();
-      Serial.print("byte received: ");
-      Serial.println(valByte, HEX);
-      newStyle = valByte;
-      // Sanity check
-      if (newStyle >= lightStyles.size()) {
-        newStyle = lightStyles.size() - 1;        
-      }
+      newStyle = readByteFromCharacteristic(LightStyleCharacteristic, 0, lightStyles.size() - 1);
       resetManualStyleIndicators();
     }
 
@@ -210,11 +202,12 @@ byte readByteFromCharacteristic(BLEByteCharacteristic characteristic, byte minVa
 
 void readManualStyleButtons() {
   // check the status of the buttons and set leds
-  // input = low -> activate led
+  // input = low means the button has been pressed
   for (int i = 0; i < 4; i++) {
     if (digitalRead(inputPins[i]) == LOW) {
       newStyle = manualStyles[i];
       resetManualStyleIndicators();
+      // Turn on the corresponding status LED to indicate the manual style was selected.
       digitalWrite(outputPins[i], HIGH);
     }
   }
@@ -227,6 +220,8 @@ void resetManualStyleIndicators() {
 }
 
 void blinkManualStyleIndicators() {
+  // Provides a visual indication that the system is in a Low Power state
+  // by blinking all of the "manual style selection" LEDs.
   // Turn all indicators on
   for (int i = 0; i < 4; i++) {
     digitalWrite(outputPins[i], HIGH);
@@ -276,14 +271,17 @@ void updateLEDs() {
   displayColors();  
 }
 
+// Initialize the pixel buffer and reset all LEDs to an off state.
 void initializePixels() {
   for (int i = 0; i < NUMPIXELS; i++)
   {
     colors[i] = 0;
   }
   pixels.clear();
+  pixels.show();
 }
 
+// Copy the pixel values from the buffer to the LEDs.
 void displayColors()
 {
   for (int i = 0; i < NUMPIXELS; i++)
@@ -294,7 +292,6 @@ void displayColors()
   pixels.show();
 }
 
-// Low-voltage detection code - should move to a helper class
 void checkForLowPowerState()
 {
   double currentVoltage = getCalculatedBatteryVoltage();
