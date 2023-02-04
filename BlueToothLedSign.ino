@@ -1,13 +1,14 @@
 #include <Adafruit_NeoPixel.h>
 #include <ArduinoBLE.h>
 #include <vector>
+#include "PixelBuffer.h"
 #include "LightStyle.h"
 #include "SingleColorStyle.h"
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
 
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
-#define NUMPIXELS 600         // The total number of pixels to control.
+//#define NUMPIXELS 600         // The total number of pixels to control.
 #define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
@@ -35,8 +36,8 @@ BLEByteCharacteristic SpeedCharacteristic("b975e425-62e4-4b08-a652-d64ad5097815"
 BLEByteCharacteristic StepCharacteristic("70e51723-0771-4946-a5b3-49693e9646b5", BLERead | BLENotify | BLEWrite);
 
 // Pixel and color data
-Adafruit_NeoPixel pixels(NUMPIXELS, DATA_OUT, NEO_GRB + NEO_KHZ800);
-uint32_t colors[NUMPIXELS];
+Adafruit_NeoPixel pixels(PIXELBUFFER_PIXELCOUNT, DATA_OUT, NEO_GRB + NEO_KHZ800);
+uint32_t colors[PIXELBUFFER_PIXELCOUNT];
 std::vector<LightStyle*> lightStyles;
 
 // Settings that are updated via bluetooth
@@ -116,13 +117,13 @@ void initializeManualIO() {
 
 void initializeLightStyles() {
   uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 212);
-  lightStyles.push_back(new SingleColorStyle("Pink", pink, colors, NUMPIXELS));
-  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), colors, NUMPIXELS));  
-  lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), colors, NUMPIXELS));
-  lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), colors, NUMPIXELS));
-  lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, colors, NUMPIXELS));
-  lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, colors, NUMPIXELS));
-  lightStyles.push_back(new RainbowStyle("Rainbow", colors, NUMPIXELS));
+  lightStyles.push_back(new SingleColorStyle("Pink", pink, colors, PIXELBUFFER_PIXELCOUNT));
+  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), colors, PIXELBUFFER_PIXELCOUNT));  
+  lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), colors, PIXELBUFFER_PIXELCOUNT));
+  lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), colors, PIXELBUFFER_PIXELCOUNT));
+  lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, colors, PIXELBUFFER_PIXELCOUNT));
+  lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, colors, PIXELBUFFER_PIXELCOUNT));
+  lightStyles.push_back(new RainbowStyle("Rainbow", colors, PIXELBUFFER_PIXELCOUNT));
 }
 
 void startBLE() {
@@ -273,7 +274,7 @@ void updateLEDs() {
 
 // Initialize the pixel buffer and reset all LEDs to an off state.
 void initializePixels() {
-  for (int i = 0; i < NUMPIXELS; i++)
+  for (int i = 0; i < PIXELBUFFER_PIXELCOUNT; i++)
   {
     colors[i] = 0;
   }
@@ -284,7 +285,7 @@ void initializePixels() {
 // Copy the pixel values from the buffer to the LEDs.
 void displayColors()
 {
-  for (int i = 0; i < NUMPIXELS; i++)
+  for (int i = 0; i < PIXELBUFFER_PIXELCOUNT; i++)
   {
     pixels.setPixelColor(i, colors[i]);
   }
