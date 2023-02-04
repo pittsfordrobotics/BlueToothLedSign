@@ -65,13 +65,7 @@ void setup() {
   pixelBuffer.initialize();
   pixelBuffer.setBrightness(DEFAULTBRIGHTNESS);
   initializeIO();
-
-  // Define the light known light styles
-  Serial.println("Initializing light styles");
   initializeLightStyles();
-
-  // Start up BLE
-  Serial.println("Starting BLE");
   startBLE();
 }
 
@@ -87,7 +81,6 @@ void loop()
   }
 
   readBleSettings();
-
   if (manualOverrideEnabled) {
     readManualStyleButtons();
   }
@@ -110,6 +103,7 @@ void initializeIO() {
 }
 
 void initializeLightStyles() {
+  Serial.println("Initializing light styles");
   uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 212);
   lightStyles.push_back(new SingleColorStyle("Pink", pink, &pixelBuffer));
   lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), &pixelBuffer));  
