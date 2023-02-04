@@ -273,7 +273,10 @@ void checkForLowPowerState()
       Serial.println(LOWPOWERTHRESHOLD);
       Serial.println("Entering low power mode.");
       // Enter low power mode. Disable LEDs and BLE.
+      // For the LEDs, set brightness to 0 and call display to turn them off.
+      // (This keeps the pixel buffer intact so we can resume where we left off when power returns.)
       pixelBuffer.setBrightness(0);
+      pixelBuffer.displayPixels();
       BLE.disconnect();
       BLE.stopAdvertise();
       inLowPowerMode = true;
