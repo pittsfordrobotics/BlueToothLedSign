@@ -1,7 +1,8 @@
 #include "Arduino.h"
 #include "SingleColorStyle.h"
+#include "PixelBuffer.h"
 
-SingleColorStyle::SingleColorStyle(String name, uint32_t color, uint32_t* colors, int numPixels) : LightStyle(name, colors, numPixels) {
+SingleColorStyle::SingleColorStyle(String name, uint32_t color, PixelBuffer* pixelBuffer) : LightStyle(name, pixelBuffer) {
   m_color = color;
   m_iterationCount = 0;
   m_nextUpdate = 0;
@@ -18,7 +19,7 @@ void SingleColorStyle::update() {
     newColor = 0;
   }
 
-  shiftColorsRight(newColor);
+  m_pixelBuffer->shiftLineRight(newColor);
   m_iterationCount++;
   m_nextUpdate = millis() + getIterationDelay();
 }
@@ -26,11 +27,12 @@ void SingleColorStyle::update() {
 void SingleColorStyle::reset()
 {
   int mod = getModulus();
-  for (int i = 0; i < m_numPixels; i++) {
+  int numPixels = m_pixelBuffer->getPixelCount();
+  for (int i = 0; i < numPixels; i++) {
     if (i % mod == 0) {
-      m_colors[i] = 0;
+      m_pixelBuffer->setPixel(i, 0);
     } else {
-      m_colors[i] = m_color;
+      m_pixelBuffer->setPixel(i, m_color);
     }
   }
 }

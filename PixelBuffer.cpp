@@ -3,10 +3,8 @@
 #include "PixelBuffer.h"
 
 PixelBuffer::PixelBuffer(int16_t gpioPin) {
-  m_neoPixels = new Adafruit_NeoPixel(PIXELBUFFER_PIXELCOUNT, gpioPin, NEO_GRB + NEO_KHZ800);
-  m_neoPixels->begin();
   m_pixelBuffer = new uint32_t[PIXELBUFFER_PIXELCOUNT];
-  clearBuffer();  
+  m_neoPixels = new Adafruit_NeoPixel(PIXELBUFFER_PIXELCOUNT, gpioPin, NEO_GRB + NEO_KHZ800);
 }
 
 void PixelBuffer::clearBuffer() {
@@ -24,16 +22,26 @@ void PixelBuffer::displayPixels() {
   m_neoPixels->show();
 }
 
+unsigned int PixelBuffer::getPixelCount() {
+  return PIXELBUFFER_PIXELCOUNT;
+}
+
+void PixelBuffer::initialize() {
+  clearBuffer();
+  m_neoPixels->begin();
+  m_neoPixels->clear();
+}
+
 void PixelBuffer::setBrightness(uint8_t brightness) {
   m_neoPixels->setBrightness(brightness);
 }
 
-uint32_t PixelBuffer::getPixel(unsigned int pixel) {
+void PixelBuffer::setPixel(unsigned int pixel, uint32_t color) {
   if (pixel >= PIXELBUFFER_PIXELCOUNT) {
-    return 0;
+    return;
   }
 
-  return m_pixelBuffer[pixel];
+  m_pixelBuffer[pixel] = color;
 }
 
 void PixelBuffer::shiftLineRight(uint32_t newColor)

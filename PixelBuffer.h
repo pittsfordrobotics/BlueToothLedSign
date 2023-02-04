@@ -1,7 +1,8 @@
-#ifndef PIXEL_BUFFER_H
-#define PIXEL_BUFFER_H
 #include <Adafruit_NeoPixel.h>
 #include "Arduino.h"
+
+#ifndef PIXEL_BUFFER_H
+#define PIXEL_BUFFER_H
 
 #define PIXELBUFFER_PIXELCOUNT 600
 
@@ -9,6 +10,7 @@ class PixelBuffer {
   public:
     PixelBuffer(int16_t gpioPin);
     void setBrightness(uint8_t brightess);
+    void initialize();
 
     // Sets the first pixel in the buffer to the new color,
     // shifting all the pixels in the buffer to the right by one.
@@ -30,10 +32,10 @@ class PixelBuffer {
     // shifting all the rows down b one.
     void shiftRowsDown(uint32_t newColor);
 
-    uint32_t getPixel(unsigned int pixel);
     unsigned int getPixelCount();
     unsigned int getColumnCount();
     unsigned int getRowCount();
+    void setPixel(unsigned int pixel, uint32_t color);
     void displayPixels();
     void clearBuffer();
 

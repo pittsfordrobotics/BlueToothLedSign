@@ -8,7 +8,6 @@
 #include "RainbowStyle.h"
 
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
-//#define NUMPIXELS 600         // The total number of pixels to control.
 #define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
@@ -36,8 +35,7 @@ BLEByteCharacteristic SpeedCharacteristic("b975e425-62e4-4b08-a652-d64ad5097815"
 BLEByteCharacteristic StepCharacteristic("70e51723-0771-4946-a5b3-49693e9646b5", BLERead | BLENotify | BLEWrite);
 
 // Pixel and color data
-Adafruit_NeoPixel pixels(PIXELBUFFER_PIXELCOUNT, DATA_OUT, NEO_GRB + NEO_KHZ800);
-uint32_t colors[PIXELBUFFER_PIXELCOUNT];
+PixelBuffer pixelBuffer(DATA_OUT);
 std::vector<LightStyle*> lightStyles;
 
 // Settings that are updated via bluetooth
@@ -50,12 +48,12 @@ byte newSpeed = DEFAULTSPEED;
 byte currentStep = DEFAULTSTEP;
 byte newStep = DEFAULTSTEP;
 
-byte inLowPowerMode = false;      // Indicates the system should be in "low power" mode. This should be a boolean, but there are no bool types.
-
+// Other internal state
 // For timing and debug information
 #define DEBUGINTERVAL 2000        // The amount of time (in msec) between timing calculations.
-int loopCounter = 0;
-unsigned long lastTimestamp = 0;
+int loopCounter = 0;              // Records the number of times the main loop ran since the last timing calculation.
+unsigned long lastTimestamp = 0;  // The last time debug information was emitted.
+byte inLowPowerMode = false;      // Indicates the system should be in "low power" mode. This should be a boolean, but there are no bool types.
 
 void setup() {
   // Delay for debugging
@@ -64,16 +62,9 @@ void setup() {
   Serial.println("Starting...");
   lastTimestamp = millis();
 
-  initializeManualIO();
-
-  // Configure the analog input pin to be able to read the battery voltage
-  pinMode(VOLTAGEINPUTPIN, INPUT);
-
-  // Initialize the NEOPixels
-  pixels.begin();
-  pixels.setBrightness(DEFAULTBRIGHTNESS);
-  Serial.println("Resetting pixels");
-  initializePixels();
+  pixelBuffer.initialize();
+  pixelBuffer.setBrightness(DEFAULTBRIGHTNESS);
+  initializeIO();
 
   // Define the light known light styles
   Serial.println("Initializing light styles");
@@ -85,7 +76,7 @@ void setup() {
 }
 
 void loop()
-{
+{  
   printTimingAndDebugInfo();
   checkForLowPowerState();
 
@@ -106,24 +97,27 @@ void loop()
   updateLEDs();
 }
 
-void initializeManualIO() {
+void initializeIO() {
   Serial.println("Initializing manual override I/O pins.");
   for (int i = 0; i < 4; i++) {
     pinMode(inputPins[i], INPUT_PULLUP);
     pinMode(outputPins[i], OUTPUT);
     digitalWrite(outputPins[i], LOW);
   }
+
+  Serial.println("Initializing the analog input to monitor battery voltage.");
+  pinMode(VOLTAGEINPUTPIN, INPUT);
 }
 
 void initializeLightStyles() {
   uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 212);
-  lightStyles.push_back(new SingleColorStyle("Pink", pink, colors, PIXELBUFFER_PIXELCOUNT));
-  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), colors, PIXELBUFFER_PIXELCOUNT));  
-  lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), colors, PIXELBUFFER_PIXELCOUNT));
-  lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), colors, PIXELBUFFER_PIXELCOUNT));
-  lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, colors, PIXELBUFFER_PIXELCOUNT));
-  lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, colors, PIXELBUFFER_PIXELCOUNT));
-  lightStyles.push_back(new RainbowStyle("Rainbow", colors, PIXELBUFFER_PIXELCOUNT));
+  lightStyles.push_back(new SingleColorStyle("Pink", pink, &pixelBuffer));
+  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), &pixelBuffer));  
+  lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), &pixelBuffer));
+  lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), &pixelBuffer));
+  lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, &pixelBuffer));
+  lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, &pixelBuffer));
+  lightStyles.push_back(new RainbowStyle("Rainbow", &pixelBuffer));
 }
 
 void startBLE() {
@@ -239,7 +233,7 @@ void blinkManualStyleIndicators() {
 void updateBrightness() {
   if (currentBrightness != newBrightness) {
     Serial.println("Brightness change detected.");
-    pixels.setBrightness(newBrightness);
+    pixelBuffer.setBrightness(newBrightness);
   }
 
   currentBrightness = newBrightness;
@@ -269,28 +263,7 @@ void updateLEDs() {
   }
 
   style->update();
-  displayColors();  
-}
-
-// Initialize the pixel buffer and reset all LEDs to an off state.
-void initializePixels() {
-  for (int i = 0; i < PIXELBUFFER_PIXELCOUNT; i++)
-  {
-    colors[i] = 0;
-  }
-  pixels.clear();
-  pixels.show();
-}
-
-// Copy the pixel values from the buffer to the LEDs.
-void displayColors()
-{
-  for (int i = 0; i < PIXELBUFFER_PIXELCOUNT; i++)
-  {
-    pixels.setPixelColor(i, colors[i]);
-  }
-
-  pixels.show();
+  pixelBuffer.displayPixels();
 }
 
 void checkForLowPowerState()
@@ -306,8 +279,7 @@ void checkForLowPowerState()
       Serial.println(LOWPOWERTHRESHOLD);
       Serial.println("Entering low power mode.");
       // Enter low power mode. Disable LEDs and BLE.
-      pixels.clear();
-      pixels.show();
+      pixelBuffer.setBrightness(0);
       BLE.disconnect();
       BLE.stopAdvertise();
       inLowPowerMode = true;
@@ -324,6 +296,7 @@ void checkForLowPowerState()
       Serial.println("Exiting low power mode.");
       // Exit low power mode.  Re-enable BLE.
       BLE.advertise();
+      pixelBuffer.setBrightness(currentBrightness);
       inLowPowerMode = false;
     }
   }

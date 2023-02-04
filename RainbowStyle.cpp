@@ -1,8 +1,9 @@
 #include <Adafruit_NeoPixel.h>
 #include "Arduino.h"
 #include "RainbowStyle.h"
+#include "PixelBuffer.h"
 
-RainbowStyle::RainbowStyle(String name, uint32_t* colors, int numPixels) : LightStyle(name, colors, numPixels) {
+RainbowStyle::RainbowStyle(String name, PixelBuffer* pixelBuffer) : LightStyle(name, pixelBuffer) {
   m_nextUpdate = 0;
   m_currentHue = 0;
 }
@@ -13,15 +14,16 @@ void RainbowStyle::update() {
   }
 
   uint32_t newColor = Adafruit_NeoPixel::ColorHSV(m_currentHue);
-  shiftColorsRight(newColor);
+  m_pixelBuffer->shiftLineRight(newColor);
   incrementHue();
   m_nextUpdate = millis() + getIterationDelay();
 }
 
 void RainbowStyle::reset()
 {
-  for (int i = m_numPixels-1; i >=0; i--) {
-    m_colors[i] = Adafruit_NeoPixel::ColorHSV(m_currentHue);
+  int numPixels = m_pixelBuffer->getPixelCount();
+  for (int i = numPixels-1; i >=0; i--) {
+    m_pixelBuffer->setPixel(i, Adafruit_NeoPixel::ColorHSV(m_currentHue));
     incrementHue();
   }
 }
