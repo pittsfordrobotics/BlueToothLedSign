@@ -29,14 +29,27 @@ class PixelBuffer {
     void shiftRowsUp(uint32_t newColor);
 
     // Sets the pixels in the top row to the new color,
-    // shifting all the rows down b one.
+    // shifting all the rows down by one.
     void shiftRowsDown(uint32_t newColor);
 
+    // Gets the number of pixels in the buffer.
     unsigned int getPixelCount();
+
+    // Gets the number of columns in the buffer.
+    // Might not be needed?
     unsigned int getColumnCount();
+
+    // Gets the number of Rows in the buffer.
+    // Might not be needed?
     unsigned int getRowCount();
+
+    // Set an individual pixel in the buffer to a color.
     void setPixel(unsigned int pixel, uint32_t color);
+
+    // Output the interal pixel buffer to the NeoPixel LEDs.
     void displayPixels();
+
+    // Clears the internal pixel buffer, but does not reset the NeoPixel LEDs.
     void clearBuffer();
 
   private:
