@@ -18,3 +18,7 @@ void LightStyle::setStep(byte step) {
 String LightStyle::getName() {
   return m_name;
 }
+
+void LightStyle::setPattern(byte pattern) {
+  m_pattern = pattern;
+}
