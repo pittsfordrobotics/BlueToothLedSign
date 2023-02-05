@@ -53,3 +53,37 @@ void PixelBuffer::shiftLineRight(uint32_t newColor)
 
   m_pixelBuffer[0] = newColor;
 }
+
+void PixelBuffer::shiftLineLeft(uint32_t newColor)
+{
+  for (int i = 0; i < PIXELBUFFER_PIXELCOUNT - 1; i++)
+  {
+    m_pixelBuffer[i] = m_pixelBuffer[i + 1];
+  }
+
+  m_pixelBuffer[PIXELBUFFER_PIXELCOUNT - 1] = newColor;
+}
+
+void PixelBuffer::shiftColumnsRight(uint32_t newColor)
+{
+  // Testing... just call shiftLine for now.
+  shiftLineRight(newColor);
+}
+
+void PixelBuffer::shiftColumnsLeft(uint32_t newColor)
+{
+  // Testing... just call shiftLine for now.
+  shiftLineLeft(newColor);
+}
+
+void PixelBuffer::shiftRowsUp(uint32_t newColor)
+{
+  // Testing... just call shiftLine for now.
+  shiftLineRight(newColor);
+}
+
+void PixelBuffer::shiftRowsDown(uint32_t newColor)
+{
+  // Testing... just call shiftLine for now.
+  shiftLineLeft(newColor);
+}
