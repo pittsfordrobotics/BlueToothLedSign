@@ -1,12 +1,13 @@
 #include "LightStyle.h"
 #include "Arduino.h"
+#include "PixelBuffer.h"
 
 #ifndef TWO_COLOR_STYLE_H
 #define TWO_COLOR_STYLE_H
 
 class TwoColorStyle : public LightStyle {
   public:
-    TwoColorStyle(String name, uint32_t color1, uint32_t color2, uint32_t* colors, int numPixels);
+    TwoColorStyle(String name, uint32_t color1, uint32_t color2, PixelBuffer* pixelBuffer);
     
     void reset();
     void update();

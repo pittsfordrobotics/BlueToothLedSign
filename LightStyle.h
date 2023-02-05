@@ -1,11 +1,12 @@
 #include "Arduino.h"
+#include "PixelBuffer.h"
 
 #ifndef LIGHT_STYLE_H
 #define LIGHT_STYLE_H
 
 class LightStyle {
   public:
-    LightStyle(String name, uint32_t* colors, int numPixels);
+    LightStyle(String name, PixelBuffer* pixelBuffer);
     String getName();
     void setSpeed(byte speed);
     void setStep(byte step);
@@ -14,10 +15,7 @@ class LightStyle {
     virtual void update() = 0;
 
   protected:
-    void shiftColorsRight(uint32_t newColor);
-
-    int m_numPixels;
-    uint32_t* m_colors;
+    PixelBuffer* m_pixelBuffer;
     String m_name;
     byte m_speed;
     byte m_step;

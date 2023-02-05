@@ -1,7 +1,8 @@
 #include "Arduino.h"
 #include "TwoColorStyle.h"
+#include "PixelBuffer.h"
 
-TwoColorStyle::TwoColorStyle(String name, uint32_t color1, uint32_t color2, uint32_t* colors, int numPixels) : LightStyle(name, colors, numPixels) {
+TwoColorStyle::TwoColorStyle(String name, uint32_t color1, uint32_t color2, PixelBuffer* pixelBuffer) : LightStyle(name, pixelBuffer) {
   m_color1 = color1;
   m_color2 = color2;
   m_iterationCount = 0;
@@ -26,7 +27,7 @@ void TwoColorStyle::update() {
     newColor = secondaryColor;
   }
 
-  shiftColorsRight(newColor);
+  m_pixelBuffer->shiftLineRight(newColor);
   m_iterationCount++;
   m_nextUpdate = millis() + getIterationDelay();
 }
@@ -42,11 +43,12 @@ void TwoColorStyle::reset()
     secondaryColor = m_color1;
   }
 
-  for (int i = 0; i < m_numPixels; i++) {
+  int numPixels = m_pixelBuffer->getPixelCount();
+  for (int i = 0; i < numPixels; i++) {
     if (i % mod == 0) {
-      m_colors[i] = secondaryColor;
+      m_pixelBuffer->setPixel(i, secondaryColor);
     } else {
-      m_colors[i] = primaryColor;
+      m_pixelBuffer->setPixel(i, primaryColor);
     }
   }
 }
