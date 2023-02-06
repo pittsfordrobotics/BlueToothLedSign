@@ -4,11 +4,15 @@
 #ifndef LIGHT_STYLE_H
 #define LIGHT_STYLE_H
 
-#define LIGHT_PATTERN_LINEAR 0;
-#define LIGHT_PATTERN_COLUMN_RIGHT 1;
-#define LIGHT_PATTERN_COLUMN_LEFT 2;
-#define LIGHT_PATTERN_ROW_DOWN 3;
-#define LIGHT_PATTERN_ROW_UP 4;
+#define LIGHT_PATTERN_COUNT 7
+
+#define LIGHT_PATTERN_LINEAR 0
+#define LIGHT_PATTERN_COLUMN_RIGHT 1
+#define LIGHT_PATTERN_COLUMN_LEFT 2
+#define LIGHT_PATTERN_ROW_DOWN 3
+#define LIGHT_PATTERN_ROW_UP 4
+#define LIGHT_PATTERN_DIGIT_RIGHT 5
+#define LIGHT_PATTERN_DIGIT_LEFT 6
 
 class LightStyle {
   public:
@@ -42,6 +46,8 @@ class LightStyle {
     byte m_speed;
     byte m_step;
     byte m_pattern;
+
+    void shiftColorUsingPattern(uint32_t newColor);
 };
    
 #endif

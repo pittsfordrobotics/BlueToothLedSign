@@ -19,7 +19,7 @@ void SingleColorStyle::update() {
     newColor = 0;
   }
 
-  m_pixelBuffer->shiftLineRight(newColor);
+  shiftColorUsingPattern(newColor);
   m_iterationCount++;
   m_nextUpdate = millis() + getIterationDelay();
 }

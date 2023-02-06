@@ -87,3 +87,13 @@ void PixelBuffer::shiftRowsDown(uint32_t newColor)
   // Testing... just call shiftLine for now.
   shiftLineLeft(newColor);
 }
+
+/*
+       3
+     2   4
+   1       5
+ 0           6
+  11       7
+    10   8
+       9
+*/

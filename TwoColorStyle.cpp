@@ -27,7 +27,7 @@ void TwoColorStyle::update() {
     newColor = secondaryColor;
   }
 
-  m_pixelBuffer->shiftLineRight(newColor);
+  shiftColorUsingPattern(newColor);
   m_iterationCount++;
   m_nextUpdate = millis() + getIterationDelay();
 }

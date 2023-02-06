@@ -14,7 +14,7 @@ void RainbowStyle::update() {
   }
 
   uint32_t newColor = Adafruit_NeoPixel::ColorHSV(m_currentHue);
-  m_pixelBuffer->shiftLineRight(newColor);
+  shiftColorUsingPattern(newColor);
   incrementHue();
   m_nextUpdate = millis() + getIterationDelay();
 }

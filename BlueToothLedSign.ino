@@ -12,6 +12,7 @@
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
 #define DEFAULTSTEP  50       // Step should be between 1 and 100.
+#define DEFAULTPATTERN 0      // Default patern (ie, Row/Column/Digit/etc)
 #define INITIALDELAY 1000     // Startup delay for debugging.
 #define TIMINGITERATIONS 100  // The number of iterations between timing messages.
 #define VOLTAGEINPUTPIN 14    // The pin # for the analog input to detect battery voltage level.
@@ -33,6 +34,7 @@ BLEByteCharacteristic LightStyleCharacteristic("c99db9f7-1719-43db-ad86-d02d36b1
 BLEStringCharacteristic StyleNamesCharacteristic("9022a1e0-3a1f-428a-bad6-3181a4d010a5", BLERead, 100);
 BLEByteCharacteristic SpeedCharacteristic("b975e425-62e4-4b08-a652-d64ad5097815", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic StepCharacteristic("70e51723-0771-4946-a5b3-49693e9646b5", BLERead | BLENotify | BLEWrite);
+BLEByteCharacteristic PatternCharacteristic("6b503d25-f643-4823-a8a6-da51109e713f", BLERead | BLENotify | BLEWrite);
 
 // Pixel and color data
 PixelBuffer pixelBuffer(DATA_OUT);
@@ -47,6 +49,8 @@ byte currentSpeed = DEFAULTSPEED;
 byte newSpeed = DEFAULTSPEED;
 byte currentStep = DEFAULTSTEP;
 byte newStep = DEFAULTSTEP;
+byte currentPattern = DEFAULTPATTERN;
+byte newPattern = DEFAULTPATTERN;
 
 // Other internal state
 // For timing and debug information
@@ -140,12 +144,14 @@ void startBLE() {
   LightStyleCharacteristic.setValue(DEFAULTSTYLE);
   StyleNamesCharacteristic.setValue(allStyles);
   SpeedCharacteristic.setValue(DEFAULTSPEED);
+  PatternCharacteristic.setValue(DEFAULTPATTERN);
   StepCharacteristic.setValue(DEFAULTSTEP);
   LEDService.addCharacteristic(BrightnessCharacteristic);
   LEDService.addCharacteristic(LightStyleCharacteristic);
   LEDService.addCharacteristic(StyleNamesCharacteristic);
   LEDService.addCharacteristic(SpeedCharacteristic);
   LEDService.addCharacteristic(StepCharacteristic);
+  LEDService.addCharacteristic(PatternCharacteristic);
   BLE.addService(LEDService);
   BLE.advertise();
 }
@@ -172,6 +178,11 @@ void readBleSettings() {
     if (StepCharacteristic.written()) {
       Serial.println("Reading new value for step.");
       newStep = readByteFromCharacteristic(StepCharacteristic, 1, 100);
+    }
+
+    if (PatternCharacteristic.written()) {
+      Serial.println("Reading new value for pattern.");
+      newStep = readByteFromCharacteristic(PatternCharacteristic, 0, LIGHT_PATTERN_COUNT);
     }
   }
 }
@@ -242,6 +253,7 @@ void updateLEDs() {
     // Changing styles - reset the lights
     style->setSpeed(currentSpeed);
     style->setStep(currentStep);
+    style->setPattern(currentPattern);
     style->reset();
     currentStyle = newStyle;
   }
@@ -254,6 +266,12 @@ void updateLEDs() {
   if (currentStep != newStep) {
     style->setStep(newStep);
     currentStep = newStep;
+  }
+
+  if (currentPattern != newPattern) {
+    style->setPattern(newPattern);
+    style->reset();
+    currentPattern = newPattern;
   }
 
   style->update();
