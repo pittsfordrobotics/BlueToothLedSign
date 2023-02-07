@@ -2,9 +2,20 @@
 #import "LightStyle.h"
 #import "PixelBuffer.h"
 
+std::vector<String> LightStyle::knownPatterns;
+
 LightStyle::LightStyle(String name, PixelBuffer* pixelBuffer) {
   m_pixelBuffer = pixelBuffer;
   m_name = name;
+  knownPatterns.push_back("Solid");
+  knownPatterns.push_back("ColumnRight");
+  knownPatterns.push_back("ColumnLeft");
+  knownPatterns.push_back("RowUp");
+  knownPatterns.push_back("RowDown");
+  knownPatterns.push_back("DigitRight");
+  knownPatterns.push_back("DigitLeft");
+  knownPatterns.push_back("LineRight");
+  knownPatterns.push_back("LineLeft");
 }
 
 void LightStyle::setSpeed(uint8_t speed) {
@@ -24,21 +35,38 @@ void LightStyle::setPattern(byte pattern) {
 }
 
 void LightStyle::shiftColorUsingPattern(uint32_t newColor) {
+  // Stick with integer values here instead of doing a bunch
+  // of "ifs" to compare strings.
   switch (m_pattern) {
-    case LIGHT_PATTERN_COLUMN_RIGHT:
+    case 1:
       m_pixelBuffer->shiftColumnsRight(newColor);
       break;
-    case LIGHT_PATTERN_COLUMN_LEFT:
+    case 2:
       m_pixelBuffer->shiftColumnsLeft(newColor);
       break;
-    case LIGHT_PATTERN_ROW_UP:
+    case 3:
       m_pixelBuffer->shiftRowsUp(newColor);
       break;
-    case LIGHT_PATTERN_ROW_DOWN:
+    case 4:
       m_pixelBuffer->shiftRowsDown(newColor);
       break;
-    default:
+    case 5:
+      m_pixelBuffer->shiftDigitsRight(newColor);
+      break;
+    case 6:
+      m_pixelBuffer->shiftDigitsLeft(newColor);
+      break;
+    case 7:
       m_pixelBuffer->shiftLineRight(newColor);
+      break;
+    case 8:
+      m_pixelBuffer->shiftLineLeft(newColor);
+      break;
+    default:
+      // Default to Solid (ie, all lights the same color)
+      for (int i = 0; i < m_pixelBuffer->getPixelCount(); i++) {
+        m_pixelBuffer->setPixel(i, newColor);
+      }
   }
 }
 

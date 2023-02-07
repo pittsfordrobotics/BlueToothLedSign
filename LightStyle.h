@@ -4,26 +4,14 @@
 #ifndef LIGHT_STYLE_H
 #define LIGHT_STYLE_H
 
-#define LIGHT_PATTERN_COUNT 7
-
-// Might want to put these into an array,
-// using string names. That way the names can be emitted
-// by a BLE characteristic so the phone app can dynamically
-// populate the pattern list.
-#define LIGHT_PATTERN_LINEAR 0
-#define LIGHT_PATTERN_COLUMN_RIGHT 1
-#define LIGHT_PATTERN_COLUMN_LEFT 2
-#define LIGHT_PATTERN_ROW_DOWN 3
-#define LIGHT_PATTERN_ROW_UP 4
-#define LIGHT_PATTERN_DIGIT_RIGHT 5
-#define LIGHT_PATTERN_DIGIT_LEFT 6
-
 class LightStyle {
   public:
     LightStyle(String name, PixelBuffer* pixelBuffer);
 
     // Gets the name of the style.
     String getName();
+
+    static std::vector<String> knownPatterns;
 
     // Sets the frequency at which the light style updates.
     void setSpeed(byte speed);

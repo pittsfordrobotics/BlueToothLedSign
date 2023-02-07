@@ -184,7 +184,7 @@ void readBleSettings() {
 
     if (PatternCharacteristic.written()) {
       Serial.println("Reading new value for pattern.");
-      newPattern = readByteFromCharacteristic(PatternCharacteristic, 0, LIGHT_PATTERN_COUNT);
+      newPattern = readByteFromCharacteristic(PatternCharacteristic, 0, LightStyle::knownPatterns.size() - 1);
     }
   }
 }
