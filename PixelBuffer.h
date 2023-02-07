@@ -27,6 +27,14 @@ class PixelBuffer {
     // shifting all the columns to the left by one.
     void shiftColumnsLeft(uint32_t newColor);
 
+    // Sets the pixels in the first digit to the new color,
+    // shifting all the digits to the right by one.
+    void shiftDigitsRight(uint32_t newColor);
+
+    // Sets the pixels in the last digit to the new color,
+    // shifting all the digits to the left by one.
+    void shiftDigitsLeft(uint32_t newColor);
+
     // Sets the pixels in the bottom row to the new color,
     // shifting all the rows up by one.
     void shiftRowsUp(uint32_t newColor);

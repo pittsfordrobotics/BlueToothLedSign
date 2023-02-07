@@ -92,6 +92,16 @@ void PixelBuffer::shiftColumnsLeft(uint32_t newColor)
   shiftPixelBlocksLeft(m_rows, newColor);
 }
 
+void PixelBuffer::shiftDigitsRight(uint32_t newColor)
+{
+  shiftPixelBlocksRight(m_digits, newColor);
+}
+
+void PixelBuffer::shiftDigitsLeft(uint32_t newColor)
+{
+  shiftPixelBlocksLeft(m_digits, newColor);
+}
+
 void PixelBuffer::shiftRowsUp(uint32_t newColor)
 {
   shiftPixelBlocksLeft(m_rows, newColor);
