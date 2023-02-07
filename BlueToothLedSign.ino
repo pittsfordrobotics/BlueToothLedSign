@@ -33,10 +33,11 @@ int manualStyles[] = {1, 3, 0, 6};
 BLEService LEDService("99be4fac-c708-41e5-a149-74047f554cc1");
 BLEByteCharacteristic BrightnessCharacteristic("5eccb54e-465f-47f4-ac50-6735bfc0e730", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic LightStyleCharacteristic("c99db9f7-1719-43db-ad86-d02d36b191b3", BLERead | BLENotify | BLEWrite);
-BLEStringCharacteristic StyleNamesCharacteristic("9022a1e0-3a1f-428a-bad6-3181a4d010a5", BLERead, 100);
+BLEStringCharacteristic StyleNamesCharacteristic("9022a1e0-3a1f-428a-bad6-3181a4d010a5", BLERead, 250);
 BLEByteCharacteristic SpeedCharacteristic("b975e425-62e4-4b08-a652-d64ad5097815", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic StepCharacteristic("70e51723-0771-4946-a5b3-49693e9646b5", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic PatternCharacteristic("6b503d25-f643-4823-a8a6-da51109e713f", BLERead | BLENotify | BLEWrite);
+BLEStringCharacteristic PatternNamesCharacteristic("348195d1-e237-4b0b-aea4-c818c3eb5e2a", BLERead, 250);
 
 // Pixel and color data
 PixelBuffer pixelBuffer(DATA_OUT);
@@ -135,6 +136,14 @@ void startBLE() {
     }
   }
 
+  String allPatterns = "";
+  for (int i = 0; i < LightStyle::knownPatterns.size(); i++) {
+    allPatterns += LightStyle::knownPatterns.at(i);
+    if (i < LightStyle::knownPatterns.size()-1) {
+      allPatterns += ";";
+    }
+  }
+
   Serial.print("All style names: ");
   Serial.println(allStyles);
   Serial.print("Style name string length: ");
@@ -147,6 +156,7 @@ void startBLE() {
   StyleNamesCharacteristic.setValue(allStyles);
   SpeedCharacteristic.setValue(DEFAULTSPEED);
   PatternCharacteristic.setValue(DEFAULTPATTERN);
+  PatternNamesCharacteristic.setValue(allPatterns);
   StepCharacteristic.setValue(DEFAULTSTEP);
   LEDService.addCharacteristic(BrightnessCharacteristic);
   LEDService.addCharacteristic(LightStyleCharacteristic);
@@ -154,6 +164,7 @@ void startBLE() {
   LEDService.addCharacteristic(SpeedCharacteristic);
   LEDService.addCharacteristic(StepCharacteristic);
   LEDService.addCharacteristic(PatternCharacteristic);
+  LEDService.addCharacteristic(PatternNamesCharacteristic);
   BLE.addService(LEDService);
   BLE.advertise();
 }
