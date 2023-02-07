@@ -1,10 +1,9 @@
 #include <Adafruit_NeoPixel.h>
+#include <vector>
 #include "Arduino.h"
 
 #ifndef PIXEL_BUFFER_H
 #define PIXEL_BUFFER_H
-
-#define PIXELBUFFER_PIXELCOUNT 600
 
 class PixelBuffer {
   public:
@@ -47,6 +46,10 @@ class PixelBuffer {
     // Might not be needed?
     unsigned int getRowCount();
 
+    // Gets the number of Digits in the buffer.
+    // Might not be needed? Even if needed, it should always be 4 anyways.
+    unsigned int getDigitCount();
+
     // Set an individual pixel in the buffer to a color.
     void setPixel(unsigned int pixel, uint32_t color);
 
@@ -60,8 +63,14 @@ class PixelBuffer {
     Adafruit_NeoPixel* m_neoPixels;
     unsigned int m_numPixels;
     uint32_t* m_pixelBuffer;
-    unsigned int m_colCount;
-    unsigned int m_rowCount;
+    std::vector<std::vector<int>*> m_columns;
+    std::vector<std::vector<int>*> m_rows;
+    std::vector<std::vector<int>*> m_digits;
+
+    void initializeMatrices();
+    void setColorForMappedPixels(std::vector<int>* destination, uint32_t newColor);
+    void shiftPixelBlocksRight(std::vector<std::vector<int>*> pixelBlocks, uint32_t newColor);
+    void shiftPixelBlocksLeft(std::vector<std::vector<int>*> pixelBlocks, uint32_t newColor);
 };
 
 #endif

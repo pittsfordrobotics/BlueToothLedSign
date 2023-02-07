@@ -7,6 +7,8 @@
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
 
+#define USE_NEOPIXEL_TEST_RING  // Enables testing using the 12-pixel NeoPixel test ring. REMOVE THIS TO RUN THE REAL SIGN!
+
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
 #define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.

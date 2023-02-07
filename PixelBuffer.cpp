@@ -1,20 +1,26 @@
 #include <Adafruit_NeoPixel.h>
+#include <vector>
 #include "Arduino.h"
 #include "PixelBuffer.h"
 
 PixelBuffer::PixelBuffer(int16_t gpioPin) {
-  m_pixelBuffer = new uint32_t[PIXELBUFFER_PIXELCOUNT];
-  m_neoPixels = new Adafruit_NeoPixel(PIXELBUFFER_PIXELCOUNT, gpioPin, NEO_GRB + NEO_KHZ800);
+  m_numPixels = 600;
+#ifdef USE_NEOPIXEL_TEST_RING
+  m_numPixels = 12;
+#endif
+  m_pixelBuffer = new uint32_t[m_numPixels];
+  m_neoPixels = new Adafruit_NeoPixel(m_numPixels, gpioPin, NEO_GRB + NEO_KHZ800);
+  initializeMatrices();
 }
 
 void PixelBuffer::clearBuffer() {
-  for (int i = 0; i < PIXELBUFFER_PIXELCOUNT; i++) {
+  for (int i = 0; i < m_numPixels; i++) {
     m_pixelBuffer[i] = 0;
   }
 }
 
 void PixelBuffer::displayPixels() {
-  for (int i = 0; i < PIXELBUFFER_PIXELCOUNT; i++)
+  for (int i = 0; i < m_numPixels; i++)
   {
     m_neoPixels->setPixelColor(i, m_pixelBuffer[i]);
   }
@@ -22,8 +28,20 @@ void PixelBuffer::displayPixels() {
   m_neoPixels->show();
 }
 
+unsigned int PixelBuffer::getColumnCount() {
+  return m_columns.size();
+}
+
+unsigned int PixelBuffer::getRowCount() {
+  return m_rows.size();
+}
+
+unsigned int PixelBuffer::getDigitCount() {
+  return m_digits.size();
+}
+
 unsigned int PixelBuffer::getPixelCount() {
-  return PIXELBUFFER_PIXELCOUNT;
+  return m_numPixels;
 }
 
 void PixelBuffer::initialize() {
@@ -37,7 +55,7 @@ void PixelBuffer::setBrightness(uint8_t brightness) {
 }
 
 void PixelBuffer::setPixel(unsigned int pixel, uint32_t color) {
-  if (pixel >= PIXELBUFFER_PIXELCOUNT) {
+  if (pixel >= m_numPixels) {
     return;
   }
 
@@ -46,7 +64,7 @@ void PixelBuffer::setPixel(unsigned int pixel, uint32_t color) {
 
 void PixelBuffer::shiftLineRight(uint32_t newColor)
 {
-  for (int i = PIXELBUFFER_PIXELCOUNT - 1; i >= 1; i--)
+  for (int i = m_numPixels - 1; i >= 1; i--)
   {
     m_pixelBuffer[i] = m_pixelBuffer[i - 1];
   }
@@ -56,44 +74,93 @@ void PixelBuffer::shiftLineRight(uint32_t newColor)
 
 void PixelBuffer::shiftLineLeft(uint32_t newColor)
 {
-  for (int i = 0; i < PIXELBUFFER_PIXELCOUNT - 1; i++)
+  for (int i = 0; i < m_numPixels - 1; i++)
   {
     m_pixelBuffer[i] = m_pixelBuffer[i + 1];
   }
 
-  m_pixelBuffer[PIXELBUFFER_PIXELCOUNT - 1] = newColor;
+  m_pixelBuffer[m_numPixels - 1] = newColor;
 }
 
 void PixelBuffer::shiftColumnsRight(uint32_t newColor)
 {
-  // Testing... just call shiftLine for now.
-  shiftLineRight(newColor);
+  shiftPixelBlocksRight(m_columns, newColor);
 }
 
 void PixelBuffer::shiftColumnsLeft(uint32_t newColor)
 {
-  // Testing... just call shiftLine for now.
-  shiftLineLeft(newColor);
+  shiftPixelBlocksLeft(m_rows, newColor);
 }
 
 void PixelBuffer::shiftRowsUp(uint32_t newColor)
 {
-  // Testing... just call shiftLine for now.
-  shiftLineRight(newColor);
+  shiftPixelBlocksLeft(m_rows, newColor);
 }
 
 void PixelBuffer::shiftRowsDown(uint32_t newColor)
 {
-  // Testing... just call shiftLine for now.
-  shiftLineLeft(newColor);
+  shiftPixelBlocksRight(m_rows, newColor);
 }
 
-/*
-       3
-     2   4
-   1       5
- 0           6
-  11       7
-    10   8
-       9
-*/
+void PixelBuffer::shiftPixelBlocksRight(std::vector<std::vector<int>*> pixelBlocks, uint32_t newColor) {
+  for (int i = pixelBlocks.size() - 1; i >= 1; i--) {
+    std::vector<int>* source = pixelBlocks.at(i - 1);
+    std::vector<int>* destination = pixelBlocks.at(i);
+    // Find the color of the first pixel in the source column, and set the destination column to that color.
+    uint32_t previousColor = m_pixelBuffer[source->at(0)];
+    setColorForMappedPixels(destination, previousColor);
+  }
+
+  setColorForMappedPixels(pixelBlocks.at(0), newColor);
+}
+
+void PixelBuffer::shiftPixelBlocksLeft(std::vector<std::vector<int>*> pixelBlocks, uint32_t newColor) {
+  for (int i = 0; i < pixelBlocks.size() - 1; i++) {
+    std::vector<int>* source = pixelBlocks.at(i + 1);
+    std::vector<int>* destination = pixelBlocks.at(i);
+    // Find the color of the first pixel in the source column, and set the destination column to that color.
+    uint32_t previousColor = m_pixelBuffer[source->at(0)];
+    setColorForMappedPixels(destination, previousColor);
+  }
+
+  setColorForMappedPixels(pixelBlocks.at(pixelBlocks.size() - 1), newColor);
+}
+
+void PixelBuffer::setColorForMappedPixels(std::vector<int>* destination, uint32_t newColor) {
+  for (int i = 0; i < destination->size(); i++) {
+    m_pixelBuffer[destination->at(i)] = newColor;
+  }
+}
+
+void PixelBuffer::initializeMatrices() {
+  // Map the pixel indices to rows, columns, and digits.
+  // ROW 0 is at the TOP of the display.
+  // COLUMN 0 is at the LEFT of the display.
+  // DIGIT 0 is at the LEFT of the display.
+#ifdef USE_NEOPIXEL_TEST_RING
+  // Set up the rows/columns/digits as small pieces of the NeoPixel ring
+  m_columns.push_back(new std::vector<int>{0});
+  m_columns.push_back(new std::vector<int>{1, 11});
+  m_columns.push_back(new std::vector<int>{2, 10});
+  m_columns.push_back(new std::vector<int>{3, 9});
+  m_columns.push_back(new std::vector<int>{4, 8});
+  m_columns.push_back(new std::vector<int>{5, 7});
+  m_columns.push_back(new std::vector<int>{6});
+
+  m_rows.push_back(new std::vector<int>{3});
+  m_rows.push_back(new std::vector<int>{2, 4});
+  m_rows.push_back(new std::vector<int>{1, 5});
+  m_rows.push_back(new std::vector<int>{0, 6});
+  m_rows.push_back(new std::vector<int>{11, 7});
+  m_rows.push_back(new std::vector<int>{10, 8});
+  m_rows.push_back(new std::vector<int>{9});
+
+  m_digits.push_back(new std::vector<int>{0, 1, 11});
+  m_digits.push_back(new std::vector<int>{2, 3, 4});
+  m_digits.push_back(new std::vector<int>{5, 6, 7});
+  m_digits.push_back(new std::vector<int>{8, 9, 10});
+#else
+  // Set up the real 3181 sign rows/columns/digits
+  // ...
+#endif
+}

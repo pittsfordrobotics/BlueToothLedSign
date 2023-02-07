@@ -6,6 +6,10 @@
 
 #define LIGHT_PATTERN_COUNT 7
 
+// Might want to put these into an array,
+// using string names. That way the names can be emitted
+// by a BLE characteristic so the phone app can dynamically
+// populate the pattern list.
 #define LIGHT_PATTERN_LINEAR 0
 #define LIGHT_PATTERN_COLUMN_RIGHT 1
 #define LIGHT_PATTERN_COLUMN_LEFT 2
