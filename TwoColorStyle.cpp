@@ -43,12 +43,25 @@ void TwoColorStyle::reset()
     secondaryColor = m_color1;
   }
 
-  int numPixels = m_pixelBuffer->getPixelCount();
-  for (int i = 0; i < numPixels; i++) {
+  int numBlocks = getNumberOfBlocksForPattern();
+  if (numBlocks > 50) {
+    // The only patterns with more than 50 blocks are the line patterns.
+    // Instead of shifting tons of times, just set the pixels directly.
+    for (int i = 0; i < numBlocks; i++) {
+      if (i % mod == 0) {
+        m_pixelBuffer->setPixel(i, secondaryColor);
+      } else {
+        m_pixelBuffer->setPixel(i, primaryColor);
+      }
+    }
+    return;
+  }
+
+  for (int i = 0; i < numBlocks; i++) {
     if (i % mod == 0) {
-      m_pixelBuffer->setPixel(i, secondaryColor);
+      shiftColorUsingPattern(secondaryColor);
     } else {
-      m_pixelBuffer->setPixel(i, primaryColor);
+      shiftColorUsingPattern(primaryColor);
     }
   }
 }
@@ -68,9 +81,14 @@ int TwoColorStyle::getModulus() {
   // Convert "step" to a modulus -- every "modulus" pixel will be the secondary color.
   // Step ranges from 1 to 100.
   // The modulus will be the minumum (2) at 50, and increase as you go away from 50.
+  // If we're higher than about 97 (or lower than about 3), just turn all pixels on.
   int minMod = 2;
   int maxMod = 10;
   int x = abs(m_step - 50);
+  if (x > 47) {
+    return m_pixelBuffer->getPixelCount() + 1;
+  }
+
   double m = (maxMod - minMod)/50.0;
   double b = minMod;
   int mod = x*m + b;

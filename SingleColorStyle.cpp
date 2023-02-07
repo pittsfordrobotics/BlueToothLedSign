@@ -27,12 +27,25 @@ void SingleColorStyle::update() {
 void SingleColorStyle::reset()
 {
   int mod = getModulus();
-  int numPixels = m_pixelBuffer->getPixelCount();
-  for (int i = 0; i < numPixels; i++) {
+  int numBlocks = getNumberOfBlocksForPattern();
+  if (numBlocks > 50) {
+    // The only patterns with more than 50 blocks are the line patterns.
+    // Instead of shifting tons of times, just set the pixels directly.
+    for (int i = 0; i < numBlocks; i++) {
+      if (i % mod == 0) {
+        m_pixelBuffer->setPixel(i, 0);
+      } else {
+        m_pixelBuffer->setPixel(i, m_color);
+      }
+    }
+    return;
+  }
+
+  for (int i = 0; i < numBlocks; i++) {
     if (i % mod == 0) {
-      m_pixelBuffer->setPixel(i, 0);
+      shiftColorUsingPattern(0);
     } else {
-      m_pixelBuffer->setPixel(i, m_color);
+      shiftColorUsingPattern(m_color);
     }
   }
 }
@@ -51,6 +64,11 @@ int SingleColorStyle::getIterationDelay() {
 int SingleColorStyle::getModulus() {
   // Convert "step" to a modulus -- every "modulus" pixel will be off.
   // Step ranges from 1 to 100.
+  // If the step is > 95, just turn all the lights on.
+  if (m_step > 95) {
+    return m_pixelBuffer->getPixelCount() + 1;
+  }
+
   int minMod = 2;
   int maxMod = 10;
   double m = (maxMod - minMod)/99.0;

@@ -40,6 +40,7 @@ class LightStyle {
     byte m_pattern;
 
     void shiftColorUsingPattern(uint32_t newColor);
+    int getNumberOfBlocksForPattern();
 };
    
 #endif
