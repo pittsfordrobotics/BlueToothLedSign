@@ -19,7 +19,7 @@ void SingleColorStyle::update() {
     newColor = 0;
   }
 
-  m_pixelBuffer->shiftLineRight(newColor);
+  shiftColorUsingPattern(newColor);
   m_iterationCount++;
   m_nextUpdate = millis() + getIterationDelay();
 }
@@ -27,12 +27,24 @@ void SingleColorStyle::update() {
 void SingleColorStyle::reset()
 {
   int mod = getModulus();
-  int numPixels = m_pixelBuffer->getPixelCount();
-  for (int i = 0; i < numPixels; i++) {
+  int numBlocks = getNumberOfBlocksForPattern();
+  if (numBlocks > 200) {
+    // The only patterns with this many blocks are the line patterns.
+    // Instead of shifting tons of times, just set the pixels directly.
+    for (int i = 0; i < numBlocks; i++) {
+      if (i % mod == 0) {
+        m_pixelBuffer->setPixel(i, 0);
+      } else {
+        m_pixelBuffer->setPixel(i, m_color);
+      }
+    }
+  }
+
+  for (int i = 0; i < numBlocks; i++) {
     if (i % mod == 0) {
-      m_pixelBuffer->setPixel(i, 0);
+      shiftColorUsingPattern(0);
     } else {
-      m_pixelBuffer->setPixel(i, m_color);
+      shiftColorUsingPattern(m_color);
     }
   }
 }

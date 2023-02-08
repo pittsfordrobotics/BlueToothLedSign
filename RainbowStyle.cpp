@@ -14,16 +14,27 @@ void RainbowStyle::update() {
   }
 
   uint32_t newColor = Adafruit_NeoPixel::ColorHSV(m_currentHue);
-  m_pixelBuffer->shiftLineRight(newColor);
+  shiftColorUsingPattern(newColor);
   incrementHue();
   m_nextUpdate = millis() + getIterationDelay();
 }
 
 void RainbowStyle::reset()
 {
-  int numPixels = m_pixelBuffer->getPixelCount();
-  for (int i = numPixels-1; i >=0; i--) {
-    m_pixelBuffer->setPixel(i, Adafruit_NeoPixel::ColorHSV(m_currentHue));
+   int numBlocks = getNumberOfBlocksForPattern();
+  if (numBlocks > 200) {
+    // The only patterns with this many blocks are the line patterns.
+    // Instead of shifting tons of times, just set the pixels directly.
+    for (int i = numBlocks - 1; i >= 0; i--) {
+      m_pixelBuffer->setPixel(i, Adafruit_NeoPixel::ColorHSV(m_currentHue));
+      incrementHue();
+    }
+
+    return;
+  }
+
+  for (int i = 0; i < numBlocks - 1; i++) {
+    shiftColorUsingPattern(Adafruit_NeoPixel::ColorHSV(m_currentHue));
     incrementHue();
   }
 }

@@ -27,7 +27,7 @@ void TwoColorStyle::update() {
     newColor = secondaryColor;
   }
 
-  m_pixelBuffer->shiftLineRight(newColor);
+  shiftColorUsingPattern(newColor);
   m_iterationCount++;
   m_nextUpdate = millis() + getIterationDelay();
 }
@@ -43,12 +43,25 @@ void TwoColorStyle::reset()
     secondaryColor = m_color1;
   }
 
-  int numPixels = m_pixelBuffer->getPixelCount();
-  for (int i = 0; i < numPixels; i++) {
+  int numBlocks = getNumberOfBlocksForPattern();
+  if (numBlocks > 50) {
+    // The only patterns with more than 50 blocks are the line patterns.
+    // Instead of shifting tons of times, just set the pixels directly.
+    for (int i = 0; i < numBlocks; i++) {
+      if (i % mod == 0) {
+        m_pixelBuffer->setPixel(i, secondaryColor);
+      } else {
+        m_pixelBuffer->setPixel(i, primaryColor);
+      }
+    }
+    return;
+  }
+
+  for (int i = 0; i < numBlocks; i++) {
     if (i % mod == 0) {
-      m_pixelBuffer->setPixel(i, secondaryColor);
+      shiftColorUsingPattern(secondaryColor);
     } else {
-      m_pixelBuffer->setPixel(i, primaryColor);
+      shiftColorUsingPattern(primaryColor);
     }
   }
 }
