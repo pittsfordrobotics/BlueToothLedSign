@@ -3,13 +3,8 @@
 #include "Arduino.h"
 #include "PixelBuffer.h"
 
-#define USE_NEOPIXEL_TEST_RING  // Enables testing using the 12-pixel NeoPixel test ring. REMOVE THIS TO RUN THE REAL SIGN!
-
 PixelBuffer::PixelBuffer(int16_t gpioPin) {
-  m_numPixels = 600;
-#ifdef USE_NEOPIXEL_TEST_RING
   m_numPixels = 12;
-#endif
   m_pixelBuffer = new uint32_t[m_numPixels];
   m_neoPixels = new Adafruit_NeoPixel(m_numPixels, gpioPin, NEO_GRB + NEO_KHZ800);
   initializeMatrices();
@@ -91,7 +86,7 @@ void PixelBuffer::shiftColumnsRight(uint32_t newColor)
 
 void PixelBuffer::shiftColumnsLeft(uint32_t newColor)
 {
-  shiftPixelBlocksLeft(m_rows, newColor);
+  shiftPixelBlocksLeft(m_columns, newColor);
 }
 
 void PixelBuffer::shiftDigitsRight(uint32_t newColor)
@@ -140,7 +135,14 @@ void PixelBuffer::shiftPixelBlocksLeft(std::vector<std::vector<int>*> pixelBlock
 
 void PixelBuffer::setColorForMappedPixels(std::vector<int>* destination, uint32_t newColor) {
   for (int i = 0; i < destination->size(); i++) {
-    m_pixelBuffer[destination->at(i)] = newColor;
+    int pixelIndex = destination->at(i);
+    Serial.print("Setting mapped block index ");
+    Serial.print(i);
+    Serial.print(" (pixel index ");
+    Serial.print(pixelIndex);
+    Serial.print(") to color ");
+    Serial.println(newColor, HEX);
+    m_pixelBuffer[pixelIndex] = newColor;
   }
 }
 
@@ -149,7 +151,7 @@ void PixelBuffer::initializeMatrices() {
   // ROW 0 is at the TOP of the display.
   // COLUMN 0 is at the LEFT of the display.
   // DIGIT 0 is at the LEFT of the display.
-#ifdef USE_NEOPIXEL_TEST_RING
+
   // Set up the rows/columns/digits as small pieces of the NeoPixel ring
   m_columns.push_back(new std::vector<int>{0});
   m_columns.push_back(new std::vector<int>{1, 11});
@@ -171,8 +173,4 @@ void PixelBuffer::initializeMatrices() {
   m_digits.push_back(new std::vector<int>{2, 3, 4});
   m_digits.push_back(new std::vector<int>{5, 6, 7});
   m_digits.push_back(new std::vector<int>{8, 9, 10});
-#else
-  // Set up the real 3181 sign rows/columns/digits
-  // ...
-#endif
 }

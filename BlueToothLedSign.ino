@@ -8,7 +8,7 @@
 #include "RainbowStyle.h"
 
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
-#define DEFAULTSTYLE 0 //6        // The default style to start with. This is an index into the lightStyles vector.
+#define DEFAULTSTYLE 1 //6        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
 #define DEFAULTSTEP  50       // Step should be between 1 and 100.
@@ -76,8 +76,8 @@ void setup() {
 
 void loop()
 {  
-  printTimingAndDebugInfo();
-  checkForLowPowerState();
+  //printTimingAndDebugInfo();
+  //checkForLowPowerState();
 
   if (inLowPowerMode) {
     // blink LEDs and exit.
@@ -114,9 +114,9 @@ void initializeLightStyles() {
   lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), &pixelBuffer));  
   lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), &pixelBuffer));
   lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), &pixelBuffer));
-  lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, &pixelBuffer));
-  lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, &pixelBuffer));
-  lightStyles.push_back(new RainbowStyle("Rainbow", &pixelBuffer));
+  //lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, &pixelBuffer));
+  //lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, &pixelBuffer));
+  //lightStyles.push_back(new RainbowStyle("Rainbow", &pixelBuffer));
 }
 
 void startBLE() {
@@ -261,6 +261,7 @@ void updateBrightness() {
 }
 
 void updateLEDs() {
+  //int shouldResetStyle = false;
   LightStyle *style = lightStyles[newStyle];
   if (currentStyle != newStyle)  
   {
@@ -270,6 +271,7 @@ void updateLEDs() {
     style->setSpeed(currentSpeed);
     style->setStep(currentStep);
     style->setPattern(currentPattern);
+    //shouldResetStyle = true;
     style->reset();
     currentStyle = newStyle;
   }
@@ -286,9 +288,15 @@ void updateLEDs() {
 
   if (currentPattern != newPattern) {
     style->setPattern(newPattern);
+    //shouldResetStyle = true;
     style->reset();
     currentPattern = newPattern;
   }
+
+  //if (shouldResetStyle) {
+    //Serial.println("Resetting style.");
+    //style->reset();
+  //}
 
   style->update();
   pixelBuffer.displayPixels();

@@ -22,8 +22,8 @@ void RainbowStyle::update() {
 void RainbowStyle::reset()
 {
    int numBlocks = getNumberOfBlocksForPattern();
-  if (numBlocks > 50) {
-    // The only patterns with more than 50 blocks are the line patterns.
+  if (numBlocks > 200) {
+    // The only patterns with this many blocks are the line patterns.
     // Instead of shifting tons of times, just set the pixels directly.
     for (int i = numBlocks - 1; i >= 0; i--) {
       m_pixelBuffer->setPixel(i, Adafruit_NeoPixel::ColorHSV(m_currentHue));

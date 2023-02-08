@@ -19,7 +19,8 @@ void SingleColorStyle::update() {
     newColor = 0;
   }
 
-  shiftColorUsingPattern(newColor);
+  //shiftColorUsingPattern(newColor);
+  m_pixelBuffer->shiftLineRight(newColor);
   m_iterationCount++;
   m_nextUpdate = millis() + getIterationDelay();
 }
@@ -28,8 +29,10 @@ void SingleColorStyle::reset()
 {
   int mod = getModulus();
   int numBlocks = getNumberOfBlocksForPattern();
-  if (numBlocks > 50) {
-    // The only patterns with more than 50 blocks are the line patterns.
+  Serial.print("In reset. NumBlocks: ");
+  Serial.println(numBlocks);
+  //if (numBlocks > 200) {
+    // The only patterns with this many blocks are the line patterns.
     // Instead of shifting tons of times, just set the pixels directly.
     for (int i = 0; i < numBlocks; i++) {
       if (i % mod == 0) {
@@ -39,8 +42,9 @@ void SingleColorStyle::reset()
       }
     }
     return;
-  }
+  //}
 
+  Serial.println("Shifting using pattern.");
   for (int i = 0; i < numBlocks; i++) {
     if (i % mod == 0) {
       shiftColorUsingPattern(0);
@@ -64,11 +68,6 @@ int SingleColorStyle::getIterationDelay() {
 int SingleColorStyle::getModulus() {
   // Convert "step" to a modulus -- every "modulus" pixel will be off.
   // Step ranges from 1 to 100.
-  // If the step is > 95, just turn all the lights on.
-  if (m_step > 95) {
-    return m_pixelBuffer->getPixelCount() + 1;
-  }
-
   int minMod = 2;
   int maxMod = 10;
   double m = (maxMod - minMod)/99.0;
