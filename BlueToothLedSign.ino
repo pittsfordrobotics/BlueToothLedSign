@@ -7,14 +7,12 @@
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
 
-#define USE_NEOPIXEL_TEST_RING  // Enables testing using the 12-pixel NeoPixel test ring. REMOVE THIS TO RUN THE REAL SIGN!
-
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
-#define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
+#define DEFAULTSTYLE 0 //6        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
 #define DEFAULTSTEP  50       // Step should be between 1 and 100.
-#define DEFAULTPATTERN 0      // Default patern (ie, Row/Column/Digit/etc)
+#define DEFAULTPATTERN 1      // Default patern (ie, Row/Column/Digit/etc)
 #define INITIALDELAY 1000     // Startup delay for debugging.
 #define TIMINGITERATIONS 100  // The number of iterations between timing messages.
 #define VOLTAGEINPUTPIN 14    // The pin # for the analog input to detect battery voltage level.
@@ -148,6 +146,11 @@ void startBLE() {
   Serial.println(allStyles);
   Serial.print("Style name string length: ");
   Serial.println(allStyles.length());
+
+  Serial.print("All pattern names: ");
+  Serial.println(allPatterns);
+  Serial.print("Pattern name string length: ");
+  Serial.println(allPatterns.length());
 
   BLE.setLocalName("3181 LED Controller");
   BLE.setAdvertisedService(LEDService);

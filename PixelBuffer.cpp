@@ -3,6 +3,8 @@
 #include "Arduino.h"
 #include "PixelBuffer.h"
 
+#define USE_NEOPIXEL_TEST_RING  // Enables testing using the 12-pixel NeoPixel test ring. REMOVE THIS TO RUN THE REAL SIGN!
+
 PixelBuffer::PixelBuffer(int16_t gpioPin) {
   m_numPixels = 600;
 #ifdef USE_NEOPIXEL_TEST_RING
