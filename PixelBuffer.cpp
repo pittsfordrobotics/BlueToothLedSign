@@ -4,7 +4,7 @@
 #include "PixelBuffer.h"
 
 PixelBuffer::PixelBuffer(int16_t gpioPin) {
-  m_numPixels = 12;
+  m_numPixels = 12;  // Set for the NEO PIXEL 12-LED ring for testing
   m_pixelBuffer = new uint32_t[m_numPixels];
   m_neoPixels = new Adafruit_NeoPixel(m_numPixels, gpioPin, NEO_GRB + NEO_KHZ800);
   initializeMatrices();
@@ -22,7 +22,18 @@ void PixelBuffer::displayPixels() {
     m_neoPixels->setPixelColor(i, m_pixelBuffer[i]);
   }
 
+  unsigned long start = millis();
   m_neoPixels->show();
+
+  // I have no idea why, but if we exit immediately and try to read BLE settings,
+  // the BLE readings are sometimes corrupt.  If we wait until the "show" is done
+  // and delay a tiny bit more, things are stable.
+  while (!m_neoPixels->canShow()) {
+    // wait for the "show" to complete
+  }
+  while (millis() - start < 10) {
+    // wait until at least 10 msec have passed since starting the "show"
+  }
 }
 
 unsigned int PixelBuffer::getColumnCount() {
@@ -136,12 +147,12 @@ void PixelBuffer::shiftPixelBlocksLeft(std::vector<std::vector<int>*> pixelBlock
 void PixelBuffer::setColorForMappedPixels(std::vector<int>* destination, uint32_t newColor) {
   for (int i = 0; i < destination->size(); i++) {
     int pixelIndex = destination->at(i);
-    Serial.print("Setting mapped block index ");
+/*    Serial.print("Setting mapped block index ");
     Serial.print(i);
     Serial.print(" (pixel index ");
     Serial.print(pixelIndex);
     Serial.print(") to color ");
-    Serial.println(newColor, HEX);
+    Serial.println(newColor, HEX); */
     m_pixelBuffer[pixelIndex] = newColor;
   }
 }

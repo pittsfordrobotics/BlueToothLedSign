@@ -58,11 +58,7 @@ int LightStyle::getNumberOfBlocksForPattern() {
 
 void LightStyle::shiftColorUsingPattern(uint32_t newColor) {
   // Stick with integer values here instead of doing a bunch
-  // of "ifs" to compare strings.
-  Serial.println("Shifting colors using pattern.");
-  m_pixelBuffer->shiftLineLeft(newColor);
-  return;
-  
+  // of "ifs" to compare strings.  
   switch (m_pattern) {
     case 1:
       m_pixelBuffer->shiftColumnsRight(newColor);
