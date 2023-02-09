@@ -4,8 +4,8 @@
 #include "PixelBuffer.h"
 
 PixelBuffer::PixelBuffer(int16_t gpioPin) {
-  initializeTestRingBuffer();
-  //initializeSignBuffer();
+  initializeTestRingBuffer(gpioPin);
+  //initializeSignBuffer(gpioPin);
 }
 
 void PixelBuffer::clearBuffer() {
@@ -149,7 +149,7 @@ void PixelBuffer::setColorForMappedPixels(std::vector<int>* destination, uint32_
   }
 }
 
-void PixelBuffer::initializeTestRingBuffer() {
+void PixelBuffer::initializeTestRingBuffer(int16_t gpioPin) {
   m_numPixels = 12;  // Set for the NEO PIXEL 12-LED ring for testing
   m_pixelColors = new uint32_t[m_numPixels];
   m_neoPixels = new Adafruit_NeoPixel(m_numPixels, gpioPin, NEO_GRB + NEO_KHZ800);
@@ -182,7 +182,7 @@ void PixelBuffer::initializeTestRingBuffer() {
   m_digits.push_back(new std::vector<int>{8, 9, 10});
 }
 
-void PixelBuffer::initializeSignBuffer() {
+void PixelBuffer::initializeSignBuffer(int16_t gpioPin) {
   m_numPixels = 458;
   m_pixelColors = new uint32_t[m_numPixels];
   m_neoPixels = new Adafruit_NeoPixel(m_numPixels, gpioPin, NEO_GRB + NEO_KHZ800);
