@@ -70,12 +70,13 @@ class PixelBuffer {
   private:
     Adafruit_NeoPixel* m_neoPixels;
     unsigned int m_numPixels;
-    uint32_t* m_pixelBuffer;
+    uint32_t* m_pixelColors;
     std::vector<std::vector<int>*> m_columns;
     std::vector<std::vector<int>*> m_rows;
     std::vector<std::vector<int>*> m_digits;
 
-    void initializeMatrices();
+    void initializeSignBuffer();
+    void initializeTestRingBuffer();
     void setColorForMappedPixels(std::vector<int>* destination, uint32_t newColor);
     void shiftPixelBlocksRight(std::vector<std::vector<int>*> pixelBlocks, uint32_t newColor);
     void shiftPixelBlocksLeft(std::vector<std::vector<int>*> pixelBlocks, uint32_t newColor);
