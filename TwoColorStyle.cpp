@@ -44,8 +44,8 @@ void TwoColorStyle::reset()
   }
 
   int numBlocks = getNumberOfBlocksForPattern();
-  if (numBlocks > 50) {
-    // The only patterns with more than 50 blocks are the line patterns.
+  if (numBlocks > 100) {
+    // The only patterns with this many blocks are the line patterns.
     // Instead of shifting tons of times, just set the pixels directly.
     for (int i = 0; i < numBlocks; i++) {
       if (i % mod == 0) {

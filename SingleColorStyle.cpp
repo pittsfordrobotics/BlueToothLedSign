@@ -28,7 +28,7 @@ void SingleColorStyle::reset()
 {
   int mod = getModulus();
   int numBlocks = getNumberOfBlocksForPattern();
-  if (numBlocks > 200) {
+  if (numBlocks > 100) {
     // The only patterns with this many blocks are the line patterns.
     // Instead of shifting tons of times, just set the pixels directly.
     for (int i = 0; i < numBlocks; i++) {
