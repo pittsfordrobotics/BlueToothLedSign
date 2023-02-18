@@ -136,6 +136,11 @@ void readBleSettings() {
   newSpeed = applyRange(btService.getSpeed(), 1, 100);
   newStep = applyRange(btService.getStep(), 1, 100);
   newPattern = applyRange(btService.getPattern(), 0, LightStyle::knownPatterns.size() - 1);
+
+  // If the style changed, clear any manual style indicators.
+  if (newStyle != currentStyle) {
+    resetManualStyleIndicators();
+  }
 }
 
 byte applyRange(byte value, byte minValue, byte maxValue) {
