@@ -4,6 +4,55 @@
 #include "Bluetooth.h"
 
 void Bluetooth::initialize() {
+  Serial.println("Starting BLE...");
+  
+  if (!BLE.begin()) {
+    Serial.println("BLE initialization failed!");
+  }
+
+  BLE.setLocalName("3181 LED Controller");
+  BLE.setAdvertisedService(m_ledService);
+  m_ledService.addCharacteristic(m_brightnessCharacteristic);
+  m_ledService.addCharacteristic(m_styleCharacteristic);
+  m_ledService.addCharacteristic(m_styleNamesCharacteristic);
+  m_ledService.addCharacteristic(m_speedCharacteristic);
+  m_ledService.addCharacteristic(m_stepCharacteristic);
+  m_ledService.addCharacteristic(m_patternCharacteristic);
+  m_ledService.addCharacteristic(m_patternNamesCharacteristic);
+  BLE.addService(m_ledService);
+  BLE.advertise();
+}
+
+void Bluetooth::stop() {
+  // Disconnect any clients and stop advertising.
+  BLE.disconnect();
+  BLE.stopAdvertise();
+}
+
+void Bluetooth::resume() {
+  BLE.advertise();
+}
+
+void Bluetooth::setStyleNames(std::vector<String> styleNames) {
+  String allStyles = *joinStrings(styleNames);
+
+  Serial.print("All style names: ");
+  Serial.println(allStyles);
+  Serial.print("Style name string length: ");
+  Serial.println(allStyles.length());
+
+  m_styleNamesCharacteristic.setValue(allStyles);
+}
+
+void Bluetooth::setPatternNames(std::vector<String> patternNames) {
+  String allPatterns = *joinStrings(patternNames);
+
+  Serial.print("All pattern names: ");
+  Serial.println(allPatterns);
+  Serial.print("Pattern name string length: ");
+  Serial.println(allPatterns.length());
+
+  m_patternNamesCharacteristic.setValue(allPatterns);
 }
 
 byte Bluetooth::getBrightness() {

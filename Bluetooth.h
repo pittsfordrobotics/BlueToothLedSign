@@ -10,6 +10,8 @@
 class Bluetooth {
   public:
     void initialize();
+    void stop();
+    void resume();
 
     void setStyleNames(std::vector<String> styleNames);
     void setPatternNames(std::vector<String> patternNames);
