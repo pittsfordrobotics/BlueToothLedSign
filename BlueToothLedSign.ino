@@ -6,6 +6,7 @@
 #include "SingleColorStyle.h"
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
+#include "Bluetooth.h"
 
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
 #define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
@@ -28,7 +29,8 @@ int outputPins[] = {9, 10, 8, 7};
 int manualStyles[] = {1, 3, 0, 6};
 
 // Main BLE service and characteristics
-BLEService LEDService("99be4fac-c708-41e5-a149-74047f554cc1");
+Bluetooth btService;
+/*BLEService LEDService("99be4fac-c708-41e5-a149-74047f554cc1");
 BLEByteCharacteristic BrightnessCharacteristic("5eccb54e-465f-47f4-ac50-6735bfc0e730", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic LightStyleCharacteristic("c99db9f7-1719-43db-ad86-d02d36b191b3", BLERead | BLENotify | BLEWrite);
 BLEStringCharacteristic StyleNamesCharacteristic("9022a1e0-3a1f-428a-bad6-3181a4d010a5", BLERead, 250);
@@ -36,6 +38,7 @@ BLEByteCharacteristic SpeedCharacteristic("b975e425-62e4-4b08-a652-d64ad5097815"
 BLEByteCharacteristic StepCharacteristic("70e51723-0771-4946-a5b3-49693e9646b5", BLERead | BLENotify | BLEWrite);
 BLEByteCharacteristic PatternCharacteristic("6b503d25-f643-4823-a8a6-da51109e713f", BLERead | BLENotify | BLEWrite);
 BLEStringCharacteristic PatternNamesCharacteristic("348195d1-e237-4b0b-aea4-c818c3eb5e2a", BLERead, 250);
+*/
 
 // Pixel and color data
 PixelBuffer pixelBuffer(DATA_OUT);
@@ -120,6 +123,22 @@ void initializeLightStyles() {
 }
 
 void startBLE() {
+  btService.initialize();
+
+  std::vector<String> styleNames;
+  for (int i = 0; i < lightStyles.size(); i++) {
+    styleNames.push_back(lightStyles[i]->getName());    
+  }  
+
+  btService.setStyleNames(styleNames);
+  btService.setPatternNames(LightStyle::knownPatterns);
+  btService.setBrightness(DEFAULTBRIGHTNESS);
+  btService.setStyle(DEFAULTSTYLE);
+  btService.setSpeed(DEFAULTSPEED);
+  btService.setPattern(DEFAULTPATTERN);
+  btService.setStep(DEFAULTSTEP);
+
+  /*
   Serial.println("Starting BLE...");
   
   if (!BLE.begin()) {
@@ -170,9 +189,17 @@ void startBLE() {
   LEDService.addCharacteristic(PatternNamesCharacteristic);
   BLE.addService(LEDService);
   BLE.advertise();
+  */
 }
 
 void readBleSettings() {
+  newBrightness = applyRange(btService.getBrightness(), 0, 255);
+  newStyle = applyRange(btService.getStyle(), 0, lightStyles.size() - 1);
+  newSpeed = applyRange(btService.getSpeed(), 1, 100);
+  newStep = applyRange(btService.getStep(), 1, 100);
+  newPattern = applyRange(btService.getPattern(), 0, LightStyle::knownPatterns.size() - 1);
+
+  /*
   BLEDevice central = BLE.central();
   if (central) {
     if (BrightnessCharacteristic.written()) {
@@ -200,9 +227,21 @@ void readBleSettings() {
       Serial.println("Reading new value for pattern.");
       newPattern = readByteFromCharacteristic(PatternCharacteristic, 0, LightStyle::knownPatterns.size() - 1);
     }
-  }
+  } */
 }
 
+byte applyRange(byte value, byte minValue, byte maxValue) {
+  if (value < minValue) {
+    return minValue;
+  }
+
+  if (value > maxValue) {
+    return maxValue;
+  }
+
+  return value;
+}
+/*
 byte readByteFromCharacteristic(BLEByteCharacteristic characteristic, byte minValue, byte maxValue) {
       byte valByte = characteristic.value();
       Serial.print("byte received: ");
@@ -215,6 +254,7 @@ byte readByteFromCharacteristic(BLEByteCharacteristic characteristic, byte minVa
       }
       return valByte;
 }
+*/
 
 void readManualStyleButtons() {
   // check the status of the buttons and set leds
@@ -316,8 +356,9 @@ void checkForLowPowerState()
       // (This keeps the pixel buffer intact so we can resume where we left off when power returns.)
       pixelBuffer.setBrightness(0);
       pixelBuffer.displayPixels();
-      BLE.disconnect();
-      BLE.stopAdvertise();
+      btService.stop();
+      //BLE.disconnect();
+      //BLE.stopAdvertise();
       inLowPowerMode = true;
     }
   }
@@ -331,7 +372,8 @@ void checkForLowPowerState()
       Serial.println(NORMALPOWERTHRESHOLD);
       Serial.println("Exiting low power mode.");
       // Exit low power mode.  Re-enable BLE.
-      BLE.advertise();
+      //BLE.advertise();
+      btService.resume();
       pixelBuffer.setBrightness(currentBrightness);
       inLowPowerMode = false;
     }
