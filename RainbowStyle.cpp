@@ -54,7 +54,9 @@ void RainbowStyle::incrementHue() {
   // Convert "step" to an increment.
   int maxInc = 1000;
   int minInc = 5;
-  double m = (maxInc - minInc)/99.0;
+  int maxStep = 100;
+  int minStep = 1;
+  double m = (double)(maxInc - minInc)/(maxStep - minStep);
   double b = minInc - m;
   int inc = m_step*m + b;
   m_currentHue += inc;

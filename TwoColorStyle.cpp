@@ -23,7 +23,7 @@ void TwoColorStyle::update() {
   }
   int mod = getModulus();
   uint32_t newColor = primaryColor;
-  if (m_iterationCount % mod == 0) {
+  if (mod > 0 && m_iterationCount % mod == 0) {
     newColor = secondaryColor;
   }
 
@@ -48,7 +48,7 @@ void TwoColorStyle::reset()
     // The only patterns with this many blocks are the line patterns.
     // Instead of shifting tons of times, just set the pixels directly.
     for (int i = 0; i < numBlocks; i++) {
-      if (i % mod == 0) {
+      if (mod > 0 && i % mod == 0) {
         m_pixelBuffer->setPixel(i, secondaryColor);
       } else {
         m_pixelBuffer->setPixel(i, primaryColor);
@@ -58,7 +58,7 @@ void TwoColorStyle::reset()
   }
 
   for (int i = 0; i < numBlocks; i++) {
-    if (i % mod == 0) {
+    if (mod > 0 && i % mod == 0) {
       shiftColorUsingPattern(secondaryColor);
     } else {
       shiftColorUsingPattern(primaryColor);
@@ -70,8 +70,10 @@ int TwoColorStyle::getIterationDelay() {
   // Convert "speed" to a delay.
   // Speed ranges from 1 to 100.
   int minDelay = 20;
-  int maxDelay = 1000;
-  double m = (maxDelay - minDelay)/-99.0;
+  int maxDelay = 800;
+  int minSpeed = 100;  // Yes, reversed.  100 correlates to "fastest", ie, min delay
+  int maxSpeed = 1;
+  double m = (double)(maxDelay - minDelay)/(maxSpeed - minSpeed);
   double b = maxDelay - m;
   int delay = m_speed*m + b;
   return delay;
@@ -83,8 +85,15 @@ int TwoColorStyle::getModulus() {
   // The modulus will be the minumum (2) at 50, and increase as you go away from 50.
   int minMod = 2;
   int maxMod = 10;
-  int x = abs(m_step - 50);
-  double m = (maxMod - minMod)/50.0;
+  int minStep = 1;
+  int maxStep = 100;
+  double midStep = (double)(maxStep - minStep) / 2.0;
+  int x = abs(m_step - midStep);
+  // If we're within about 5 of the max/min, report no mod so it's a solid color.
+  if (midStep - x < 5) {
+    return -1;
+  }
+  double m = (double)(maxMod - minMod)/(midStep - minStep);
   double b = minMod;
   int mod = x*m + b;
   return mod;
