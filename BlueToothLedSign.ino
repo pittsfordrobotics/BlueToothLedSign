@@ -28,17 +28,8 @@ int outputPins[] = {9, 10, 8, 7};
 // The manual values styles are indexes into the lightStyles vector.
 int manualStyles[] = {1, 3, 0, 6};
 
-// Main BLE service and characteristics
+// Main BLE service wrapper
 Bluetooth btService;
-/*BLEService LEDService("99be4fac-c708-41e5-a149-74047f554cc1");
-BLEByteCharacteristic BrightnessCharacteristic("5eccb54e-465f-47f4-ac50-6735bfc0e730", BLERead | BLENotify | BLEWrite);
-BLEByteCharacteristic LightStyleCharacteristic("c99db9f7-1719-43db-ad86-d02d36b191b3", BLERead | BLENotify | BLEWrite);
-BLEStringCharacteristic StyleNamesCharacteristic("9022a1e0-3a1f-428a-bad6-3181a4d010a5", BLERead, 250);
-BLEByteCharacteristic SpeedCharacteristic("b975e425-62e4-4b08-a652-d64ad5097815", BLERead | BLENotify | BLEWrite);
-BLEByteCharacteristic StepCharacteristic("70e51723-0771-4946-a5b3-49693e9646b5", BLERead | BLENotify | BLEWrite);
-BLEByteCharacteristic PatternCharacteristic("6b503d25-f643-4823-a8a6-da51109e713f", BLERead | BLENotify | BLEWrite);
-BLEStringCharacteristic PatternNamesCharacteristic("348195d1-e237-4b0b-aea4-c818c3eb5e2a", BLERead, 250);
-*/
 
 // Pixel and color data
 PixelBuffer pixelBuffer(DATA_OUT);
@@ -137,59 +128,6 @@ void startBLE() {
   btService.setSpeed(DEFAULTSPEED);
   btService.setPattern(DEFAULTPATTERN);
   btService.setStep(DEFAULTSTEP);
-
-  /*
-  Serial.println("Starting BLE...");
-  
-  if (!BLE.begin()) {
-    Serial.println("starting Bluetooth® Low Energy failed!");
-  }
-
-  String allStyles = "";
-  for (int i = 0; i < lightStyles.size(); i++) {
-    allStyles += lightStyles[i]->getName();
-    if (i < lightStyles.size()-1) {
-      allStyles += ";";
-    }
-  }
-
-  String allPatterns = "";
-  for (int i = 0; i < LightStyle::knownPatterns.size(); i++) {
-    allPatterns += LightStyle::knownPatterns.at(i);
-    if (i < LightStyle::knownPatterns.size()-1) {
-      allPatterns += ";";
-    }
-  }
-
-  Serial.print("All style names: ");
-  Serial.println(allStyles);
-  Serial.print("Style name string length: ");
-  Serial.println(allStyles.length());
-
-  Serial.print("All pattern names: ");
-  Serial.println(allPatterns);
-  Serial.print("Pattern name string length: ");
-  Serial.println(allPatterns.length());
-
-  BLE.setLocalName("3181 LED Controller");
-  BLE.setAdvertisedService(LEDService);
-  BrightnessCharacteristic.setValue(DEFAULTBRIGHTNESS);
-  LightStyleCharacteristic.setValue(DEFAULTSTYLE);
-  StyleNamesCharacteristic.setValue(allStyles);
-  SpeedCharacteristic.setValue(DEFAULTSPEED);
-  PatternCharacteristic.setValue(DEFAULTPATTERN);
-  PatternNamesCharacteristic.setValue(allPatterns);
-  StepCharacteristic.setValue(DEFAULTSTEP);
-  LEDService.addCharacteristic(BrightnessCharacteristic);
-  LEDService.addCharacteristic(LightStyleCharacteristic);
-  LEDService.addCharacteristic(StyleNamesCharacteristic);
-  LEDService.addCharacteristic(SpeedCharacteristic);
-  LEDService.addCharacteristic(StepCharacteristic);
-  LEDService.addCharacteristic(PatternCharacteristic);
-  LEDService.addCharacteristic(PatternNamesCharacteristic);
-  BLE.addService(LEDService);
-  BLE.advertise();
-  */
 }
 
 void readBleSettings() {
@@ -198,36 +136,6 @@ void readBleSettings() {
   newSpeed = applyRange(btService.getSpeed(), 1, 100);
   newStep = applyRange(btService.getStep(), 1, 100);
   newPattern = applyRange(btService.getPattern(), 0, LightStyle::knownPatterns.size() - 1);
-
-  /*
-  BLEDevice central = BLE.central();
-  if (central) {
-    if (BrightnessCharacteristic.written()) {
-      Serial.println("Reading new value for brightness.");
-      newBrightness = readByteFromCharacteristic(BrightnessCharacteristic, 0, 255);
-    }
-
-    if (LightStyleCharacteristic.written()) {
-      Serial.println("Reading new value for style.");
-      newStyle = readByteFromCharacteristic(LightStyleCharacteristic, 0, lightStyles.size() - 1);
-      resetManualStyleIndicators();
-    }
-
-    if (SpeedCharacteristic.written()) {
-      Serial.println("Reading new value for speed.");
-      newSpeed = readByteFromCharacteristic(SpeedCharacteristic, 1, 100);
-    }
-
-    if (StepCharacteristic.written()) {
-      Serial.println("Reading new value for step.");
-      newStep = readByteFromCharacteristic(StepCharacteristic, 1, 100);
-    }
-
-    if (PatternCharacteristic.written()) {
-      Serial.println("Reading new value for pattern.");
-      newPattern = readByteFromCharacteristic(PatternCharacteristic, 0, LightStyle::knownPatterns.size() - 1);
-    }
-  } */
 }
 
 byte applyRange(byte value, byte minValue, byte maxValue) {
@@ -241,20 +149,6 @@ byte applyRange(byte value, byte minValue, byte maxValue) {
 
   return value;
 }
-/*
-byte readByteFromCharacteristic(BLEByteCharacteristic characteristic, byte minValue, byte maxValue) {
-      byte valByte = characteristic.value();
-      Serial.print("byte received: ");
-      Serial.println(valByte, HEX);
-      if (valByte < minValue) {
-        valByte = minValue;
-      }
-      if (valByte > maxValue) {
-        valByte = maxValue;
-      }
-      return valByte;
-}
-*/
 
 void readManualStyleButtons() {
   // check the status of the buttons and set leds
@@ -265,6 +159,8 @@ void readManualStyleButtons() {
       resetManualStyleIndicators();
       // Turn on the corresponding status LED to indicate the manual style was selected.
       digitalWrite(outputPins[i], HIGH);
+      btService.setStyle(newStyle);
+      return;
     }
   }
 }
@@ -357,8 +253,6 @@ void checkForLowPowerState()
       pixelBuffer.setBrightness(0);
       pixelBuffer.displayPixels();
       btService.stop();
-      //BLE.disconnect();
-      //BLE.stopAdvertise();
       inLowPowerMode = true;
     }
   }
@@ -372,7 +266,6 @@ void checkForLowPowerState()
       Serial.println(NORMALPOWERTHRESHOLD);
       Serial.println("Exiting low power mode.");
       // Exit low power mode.  Re-enable BLE.
-      //BLE.advertise();
       btService.resume();
       pixelBuffer.setBrightness(currentBrightness);
       inLowPowerMode = false;
