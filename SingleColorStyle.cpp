@@ -15,7 +15,7 @@ void SingleColorStyle::update() {
 
   int mod = getModulus();
   uint32_t newColor = m_color;
-  if (m_iterationCount % mod == 0) {
+  if (mod > 0 && m_iterationCount % mod == 0) {
     newColor = 0;
   }
 
@@ -32,7 +32,7 @@ void SingleColorStyle::reset()
     // The only patterns with this many blocks are the line patterns.
     // Instead of shifting tons of times, just set the pixels directly.
     for (int i = 0; i < numBlocks; i++) {
-      if (i % mod == 0) {
+      if (mod > 0 && i % mod == 0) {
         m_pixelBuffer->setPixel(i, 0);
       } else {
         m_pixelBuffer->setPixel(i, m_color);
@@ -41,7 +41,7 @@ void SingleColorStyle::reset()
   }
 
   for (int i = 0; i < numBlocks; i++) {
-    if (i % mod == 0) {
+    if (mod > 0 && i % mod == 0) {
       shiftColorUsingPattern(0);
     } else {
       shiftColorUsingPattern(m_color);
@@ -63,9 +63,16 @@ int SingleColorStyle::getIterationDelay() {
 int SingleColorStyle::getModulus() {
   // Convert "step" to a modulus -- every "modulus" pixel will be off.
   // Step ranges from 1 to 100.
+  int minStep = 1; 
+  int maxStep = 95; // any values higher than this will result in all pixels being on.
   int minMod = 2;
   int maxMod = 10;
-  double m = (maxMod - minMod)/99.0;
+
+  if (m_step > maxStep) {
+    return -1;
+  }
+
+  double m = (double)(maxMod - minMod)/(maxStep - minStep);
   double b = minMod - m;
   int mod = m_step*m + b;
   return mod;
