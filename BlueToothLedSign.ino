@@ -8,7 +8,7 @@
 #include "RainbowStyle.h"
 #include "Bluetooth.h"
 
-#define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
+#define DATA_OUT 27           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
 #define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
@@ -71,7 +71,7 @@ void setup() {
 void loop()
 {  
   printTimingAndDebugInfo();
-  checkForLowPowerState();
+  //checkForLowPowerState();
 
   if (inLowPowerMode) {
     // blink LEDs and exit.
