@@ -9,11 +9,11 @@
 #include "Bluetooth.h"
 
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
-#define DEFAULTSTYLE 6        // The default style to start with. This is an index into the lightStyles vector.
-#define DEFAULTBRIGHTNESS 50  // Brightness should be between 0 and 255.
+#define DEFAULTSTYLE 1        // The default style to start with. This is an index into the lightStyles vector.
+#define DEFAULTBRIGHTNESS 255 // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
 #define DEFAULTSTEP  50       // Step should be between 1 and 100.
-#define DEFAULTPATTERN 1      // Default patern (ie, Row/Column/Digit/etc)
+#define DEFAULTPATTERN 0      // Default patern (ie, Row/Column/Digit/etc). This is an index into the LightStyle::knownPatterns vector.
 #define INITIALDELAY 1000     // Startup delay for debugging.
 #define TIMINGITERATIONS 100  // The number of iterations between timing messages.
 #define VOLTAGEINPUTPIN 14    // The pin # for the analog input to detect battery voltage level.
@@ -103,14 +103,13 @@ void initializeIO() {
 
 void initializeLightStyles() {
   Serial.println("Initializing light styles");
+  lightStyles.push_back(new RainbowStyle("Rainbow", &pixelBuffer));
   uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 212);
   lightStyles.push_back(new SingleColorStyle("Pink", pink, &pixelBuffer));
-  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), &pixelBuffer));  
-  lightStyles.push_back(new SingleColorStyle("Green", Adafruit_NeoPixel::Color(0, 255, 0), &pixelBuffer));
+  lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, &pixelBuffer));
   lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), &pixelBuffer));
   lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, &pixelBuffer));
-  lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, &pixelBuffer));
-  lightStyles.push_back(new RainbowStyle("Rainbow", &pixelBuffer));
+  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), &pixelBuffer));  
 }
 
 void startBLE() {
