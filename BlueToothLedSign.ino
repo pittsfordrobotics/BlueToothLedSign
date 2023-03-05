@@ -7,6 +7,7 @@
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
 #include "Bluetooth.h"
+#include "ManualSelection.h"
 
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
 #define DEFAULTSTYLE 1        // The default style to start with. This is an index into the lightStyles vector.
@@ -27,6 +28,7 @@ int inputPins[] = {3, 4, 5, 6};
 int outputPins[] = {9, 10, 8, 7};
 // The manual values styles are indexes into the lightStyles vector.
 int manualStyles[] = {1, 3, 0, 6};
+std::vector<ManualSelection>* manualStyleDefinitions = new std::vector<ManualSelection>[4];
 
 // Main BLE service wrapper
 Bluetooth btService;
@@ -46,6 +48,7 @@ byte currentStep = DEFAULTSTEP;
 byte newStep = DEFAULTSTEP;
 byte currentPattern = DEFAULTPATTERN;
 byte newPattern = DEFAULTPATTERN;
+byte manualStyleIndex = 0; // Manual style buttons can have more than one style assigned. This indicates which is active for a button.
 
 // Other internal state
 // For timing and debug information
@@ -65,6 +68,7 @@ void setup() {
   pixelBuffer.setBrightness(DEFAULTBRIGHTNESS);
   initializeIO();
   initializeLightStyles();
+  initializeManualStyleDefinitions();
   startBLE();
 }
 
@@ -112,6 +116,15 @@ void initializeLightStyles() {
   lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), &pixelBuffer));  
 }
 
+void initializeManualStyleDefinitions() {
+  // Create the list of manual styles to be assigned to each of the 4 "manual style" buttons.
+  // Parameters for the ManualSelection struct are: styleIndex, brightness, patternIndex, step, speed
+  manualStyleDefinitions[0].push_back(ManualSelection(1, 255, 1, 50, 50));
+  manualStyleDefinitions[1].push_back(ManualSelection(2, 255, 1, 50, 50));
+  manualStyleDefinitions[2].push_back(ManualSelection(4, 255, 1, 50, 50));
+  manualStyleDefinitions[3].push_back(ManualSelection(0, 255, 1, 250, 250));
+}
+
 void startBLE() {
   btService.initialize();
 
@@ -139,6 +152,7 @@ void readBleSettings() {
   // If the style changed, clear any manual style indicators.
   if (newStyle != currentStyle) {
     resetManualStyleIndicators();
+    manualStyleIndex = 0;
   }
 }
 
@@ -159,7 +173,17 @@ void readManualStyleButtons() {
   // input = low means the button has been pressed
   for (int i = 0; i < 4; i++) {
     if (digitalRead(inputPins[i]) == LOW) {
+      // See if the newly selected manual style was already selected.
+      // If so, iterate up to the next manual style defined for the button.
       newStyle = manualStyles[i];
+      if (newStyle == currentStyle) {
+        // Already on this style - go to the next one in the list.
+        manualStyleIndex = applyRange(manualStyleIndex, 0, 0); // update for the list length.
+        // ...
+      } else {
+        // Pick the first style in the list for this button.
+        manualStyleIndex = 0;
+      }
       resetManualStyleIndicators();
       // Turn on the corresponding status LED to indicate the manual style was selected.
       digitalWrite(outputPins[i], HIGH);
