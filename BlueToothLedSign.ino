@@ -7,6 +7,7 @@
 #include "TwoColorStyle.h"
 #include "RainbowStyle.h"
 #include "Bluetooth.h"
+#include "ManualSelection.h"
 
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
 #define DEFAULTSTYLE 1        // The default style to start with. This is an index into the lightStyles vector.
@@ -23,10 +24,9 @@
 // Manual style button configuration.
 // The input/output pin numbers are the Digital pin numbers.
 bool manualOverrideEnabled = true;
-int inputPins[] = {3, 4, 5, 6};
-int outputPins[] = {9, 10, 8, 7};
-// The manual values styles are indexes into the lightStyles vector.
-int manualStyles[] = {1, 3, 0, 6};
+int inputPins[] = {3, 4, 5, 6};   // The pins attached to the buttons
+int outputPins[] = {9, 10, 8, 7}; // The pins attached to the LED indicators
+std::vector<ManualSelection>* manualStyleDefinitions = new std::vector<ManualSelection>[4];
 
 // Main BLE service wrapper
 Bluetooth btService;
@@ -47,6 +47,12 @@ byte newStep = DEFAULTSTEP;
 byte currentPattern = DEFAULTPATTERN;
 byte newPattern = DEFAULTPATTERN;
 
+// State-keeping for the manual style buttons
+byte manualStyleIndex = 0; // Manual style buttons can have more than one style assigned. This indicates which is active for a button.
+byte lastManualStyleSelected = -1; // The index of the last manual style that was selected.
+long lastManualStyleUpdate = 0; // The last time a manual button was pressed - used to debounce the signal.
+int debouncePeriodMsec = 500; // The amount of time to wait until reading the manual buttons again.
+
 // Other internal state
 // For timing and debug information
 #define DEBUGINTERVAL 2000        // The amount of time (in msec) between timing calculations.
@@ -65,6 +71,7 @@ void setup() {
   pixelBuffer.setBrightness(DEFAULTBRIGHTNESS);
   initializeIO();
   initializeLightStyles();
+  initializeManualStyleDefinitions();
   startBLE();
 }
 
@@ -105,11 +112,24 @@ void initializeLightStyles() {
   Serial.println("Initializing light styles");
   lightStyles.push_back(new RainbowStyle("Rainbow", &pixelBuffer));
   uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 212);
+  uint32_t red = Adafruit_NeoPixel::Color(255, 0, 0);
+  uint32_t blue = Adafruit_NeoPixel::Color(0, 0, 255);
   lightStyles.push_back(new SingleColorStyle("Pink", pink, &pixelBuffer));
-  lightStyles.push_back(new TwoColorStyle("Blue-Pink", Adafruit_NeoPixel::Color(0, 0, 255), pink, &pixelBuffer));
-  lightStyles.push_back(new SingleColorStyle("Blue", Adafruit_NeoPixel::Color(0, 0, 255), &pixelBuffer));
-  lightStyles.push_back(new TwoColorStyle("Red-Pink", Adafruit_NeoPixel::Color(255, 0, 0), pink, &pixelBuffer));
-  lightStyles.push_back(new SingleColorStyle("Red", Adafruit_NeoPixel::Color(255, 0, 0), &pixelBuffer));  
+  lightStyles.push_back(new TwoColorStyle("Blue-Pink", blue, pink, &pixelBuffer));
+  lightStyles.push_back(new SingleColorStyle("Blue", blue, &pixelBuffer));
+  lightStyles.push_back(new TwoColorStyle("Red-Pink", red, pink, &pixelBuffer));
+  lightStyles.push_back(new SingleColorStyle("Red", red, &pixelBuffer));  
+}
+
+void initializeManualStyleDefinitions() {
+  // Create the list of manual styles to be assigned to each of the 4 "manual style" buttons.
+  // Parameters for the ManualSelection struct are: styleIndex, brightness, patternIndex, step, speed
+  manualStyleDefinitions[0].push_back(ManualSelection(1, 255, 1, 50, 50));   // Pink
+  manualStyleDefinitions[1].push_back(ManualSelection(2, 255, 1, 50, 50));   // Blue-Pink
+  manualStyleDefinitions[1].push_back(ManualSelection(3, 255, 1, 50, 50));   // Blue
+  manualStyleDefinitions[2].push_back(ManualSelection(4, 255, 1, 50, 50));   // Red-Pink
+  manualStyleDefinitions[2].push_back(ManualSelection(5, 255, 1, 50, 50));   // Red
+  manualStyleDefinitions[3].push_back(ManualSelection(0, 255, 1, 250, 250)); // Rainbow
 }
 
 void startBLE() {
@@ -139,6 +159,7 @@ void readBleSettings() {
   // If the style changed, clear any manual style indicators.
   if (newStyle != currentStyle) {
     resetManualStyleIndicators();
+    lastManualStyleSelected = -1;
   }
 }
 
@@ -155,15 +176,39 @@ byte applyRange(byte value, byte minValue, byte maxValue) {
 }
 
 void readManualStyleButtons() {
-  // check the status of the buttons and set leds
+  long now = millis();
+  if (now < lastManualStyleUpdate + debouncePeriodMsec) {
+    // We're in the debounce window.  Just exit.
+    return;
+  }
+
+  // Check the status of the buttons and set LEDs.
   // input = low means the button has been pressed
   for (int i = 0; i < 4; i++) {
     if (digitalRead(inputPins[i]) == LOW) {
-      newStyle = manualStyles[i];
+      if (lastManualStyleSelected == i) {
+        // Pressed the same button again - update the style index.
+        manualStyleIndex = ++manualStyleIndex % manualStyleDefinitions[i].size();
+      } else {
+        // Selected a different button. Reset the style index.
+        manualStyleIndex = 0;
+        lastManualStyleSelected = i;
+      }
+      ManualSelection selection = manualStyleDefinitions[i].at(manualStyleIndex);
+      newStyle = selection.StyleIndex;
+      newBrightness = selection.Brightness;
+      newStep = selection.Step;
+      newSpeed = selection.Speed;
+      newPattern = selection.PatternIndex;
       resetManualStyleIndicators();
       // Turn on the corresponding status LED to indicate the manual style was selected.
       digitalWrite(outputPins[i], HIGH);
       btService.setStyle(newStyle);
+      btService.setSpeed(newSpeed);
+      btService.setStep(newStep);
+      btService.setBrightness(newBrightness);
+      btService.setPattern(newPattern);
+      lastManualStyleUpdate = now;
       return;
     }
   }
