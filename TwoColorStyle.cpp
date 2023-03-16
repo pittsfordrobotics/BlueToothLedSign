@@ -28,6 +28,12 @@ void TwoColorStyle::update() {
   }
 
   shiftColorUsingPattern(newColor);
+  // If shifting rows or columns, do 2 at a time.
+  // That is, if pattern = 1,2,3,4 -> right, left, up, down
+  if (m_pattern >=1 && m_pattern <=4) {
+    shiftColorUsingPattern(newColor);
+  }
+  
   m_iterationCount++;
   m_nextUpdate = millis() + getIterationDelay();
 }

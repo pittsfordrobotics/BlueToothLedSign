@@ -4,8 +4,8 @@
 #include "PixelBuffer.h"
 
 PixelBuffer::PixelBuffer(int16_t gpioPin) {
-  initializeTestRingBuffer(gpioPin);
-  //initializeSignBuffer(gpioPin);
+  //initializeTestRingBuffer(gpioPin);
+  initializeSignBuffer(gpioPin);
 }
 
 void PixelBuffer::clearBuffer() {

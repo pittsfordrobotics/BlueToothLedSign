@@ -25,7 +25,7 @@
 // The input/output pin numbers are the Digital pin numbers.
 bool manualOverrideEnabled = true;
 int inputPins[] = {3, 4, 5, 6};   // The pins attached to the buttons
-int outputPins[] = {9, 10, 8, 7}; // The pins attached to the LED indicators
+int outputPins[] = {7, 8, 10, 9}; // The pins attached to the LED indicators
 std::vector<ManualSelection>* manualStyleDefinitions = new std::vector<ManualSelection>[4];
 
 // Main BLE service wrapper
