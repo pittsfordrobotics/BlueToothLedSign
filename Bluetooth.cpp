@@ -19,6 +19,7 @@ void Bluetooth::initialize() {
   m_ledService.addCharacteristic(m_stepCharacteristic);
   m_ledService.addCharacteristic(m_patternCharacteristic);
   m_ledService.addCharacteristic(m_patternNamesCharacteristic);
+  m_ledService.addCharacteristic(m_batteryVoltageCharacteristic);
   BLE.addService(m_ledService);
   BLE.advertise();
 }
@@ -103,6 +104,10 @@ byte Bluetooth::getStep() {
 void Bluetooth::setStep(byte step) {
   m_currentStep = step;
   m_stepCharacteristic.setValue(step);
+}
+
+void Bluetooth::emitBatteryVoltage(float voltage) {
+  m_batteryVoltageCharacteristic.setValue(voltage);
 }
 
 byte Bluetooth::readByteFromCharacteristic(BLEByteCharacteristic characteristic, byte defaultValue, String name) {

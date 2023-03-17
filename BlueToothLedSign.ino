@@ -55,7 +55,7 @@ int debouncePeriodMsec = 500; // The amount of time to wait until reading the ma
 
 // Other internal state
 // For timing and debug information
-#define DEBUGINTERVAL 2000        // The amount of time (in msec) between timing calculations.
+#define TELEMETRYINTERVAL 2000    // The amount of time (in msec) between timing calculations.
 int loopCounter = 0;              // Records the number of times the main loop ran since the last timing calculation.
 unsigned long lastTimestamp = 0;  // The last time debug information was emitted.
 byte inLowPowerMode = false;      // Indicates the system should be in "low power" mode. This should be a boolean, but there are no bool types.
@@ -322,12 +322,12 @@ void checkForLowPowerState()
   }
 }
 
-double getCalculatedBatteryVoltage()
+float getCalculatedBatteryVoltage()
 {
   // The analog input ranges from 0 (0V) to 1024 (3.3V), resulting in 0.00322 Volts per "tick".
   // The battery voltage passes through a voltage divider such that the voltage at the input
   // is 1/3 of the actual battery voltage.
-  double rawLevel = getVoltageInputLevel();
+  float rawLevel = getVoltageInputLevel();
   return rawLevel * 3 * 3.3 / 1024;
 }
 
@@ -341,7 +341,7 @@ void printTimingAndDebugInfo()
   loopCounter++;
   unsigned long timestamp = millis();
 
-  if (timestamp > lastTimestamp + DEBUGINTERVAL)
+  if (timestamp > lastTimestamp + TELEMETRYINTERVAL)
   {
     // Calculate loop timing data
     unsigned long diff = timestamp - lastTimestamp;
@@ -356,7 +356,10 @@ void printTimingAndDebugInfo()
     
     // Output voltage info periodically
     int rawLevel = getVoltageInputLevel();
-    double voltage = getCalculatedBatteryVoltage();
+    float voltage = getCalculatedBatteryVoltage();
+
+    // Emit battery voltage information on Bluetooth as well as Serial.
+    btService.emitBatteryVoltage(voltage);
     Serial.print("Analog input: ");
     Serial.print(rawLevel);
     Serial.print("; calculated voltage: ");
