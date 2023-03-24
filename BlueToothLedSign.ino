@@ -150,12 +150,34 @@ void startBLE() {
 }
 
 void readBleSettings() {
-  newBrightness = applyRange(btService.getBrightness(), 0, 255);
-  newStyle = applyRange(btService.getStyle(), 0, lightStyles.size() - 1);
-  newSpeed = applyRange(btService.getSpeed(), 1, 100);
-  newStep = applyRange(btService.getStep(), 1, 100);
-  newPattern = applyRange(btService.getPattern(), 0, LightStyle::knownPatterns.size() - 1);
+  newBrightness = btService.getBrightness();
 
+  // Check the range on the characteristic values.
+  // If out of range, ignore the update and reset the BLE characteristic to the old value.
+  newStyle = btService.getStyle();
+  if (!isInRange(newStyle, 0, lightStyles.size()-1)) {
+    btService.setStyle(currentStyle);
+    newStyle = currentStyle;
+  }
+
+  newSpeed = btService.getSpeed();
+  if (!isInRange(newSpeed, 1, 100)) {
+    btService.setSpeed(currentSpeed);
+    newSpeed = currentSpeed;
+  }
+
+  newStep = btService.getStep();
+  if (!isInRange(newStep, 1, 100)) {
+    btService.setStep(currentStep);
+    newStep = currentStep;
+  }
+  
+  newPattern = btService.getPattern();
+  if (!isInRange(newPattern, 0, LightStyle::knownPatterns.size()-1)) {
+    btService.setPattern(currentPattern);
+    newPattern = currentPattern;
+  }
+  
   // If the style changed, clear any manual style indicators.
   if (newStyle != currentStyle) {
     resetManualStyleIndicators();
@@ -163,16 +185,8 @@ void readBleSettings() {
   }
 }
 
-byte applyRange(byte value, byte minValue, byte maxValue) {
-  if (value < minValue) {
-    return minValue;
-  }
-
-  if (value > maxValue) {
-    return maxValue;
-  }
-
-  return value;
+byte isInRange(byte value, byte minValue, byte maxValue) {
+  return (value >= minValue && value <= maxValue);
 }
 
 void readManualStyleButtons() {
