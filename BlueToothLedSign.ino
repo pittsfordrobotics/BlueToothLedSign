@@ -118,7 +118,8 @@ void initializeLightStyles() {
   lightStyles.push_back(new TwoColorStyle("Blue-Pink", blue, pink, &pixelBuffer));
   lightStyles.push_back(new SingleColorStyle("Blue", blue, &pixelBuffer));
   lightStyles.push_back(new TwoColorStyle("Red-Pink", red, pink, &pixelBuffer));
-  lightStyles.push_back(new SingleColorStyle("Red", red, &pixelBuffer));  
+  lightStyles.push_back(new SingleColorStyle("Red", red, &pixelBuffer));
+  lightStyles.push_back(new SingleColorStyle("White", Adafruit_NeoPixel::Color(255, 255, 255), &pixelBuffer));
 }
 
 void initializeManualStyleDefinitions() {
