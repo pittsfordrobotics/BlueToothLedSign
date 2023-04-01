@@ -126,7 +126,7 @@ void initializeIO() {
 void initializeLightStyles() {
   Serial.println("Initializing light styles");
   lightStyles.push_back(new RainbowStyle("Rainbow", &pixelBuffer));
-  uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 212);
+  uint32_t pink =  Adafruit_NeoPixel::Color(230, 22, 161);
   uint32_t red = Adafruit_NeoPixel::Color(255, 0, 0);
   uint32_t blue = Adafruit_NeoPixel::Color(0, 0, 255);
   uint32_t white = Adafruit_NeoPixel::Color(255, 255, 255);
