@@ -302,7 +302,7 @@ void PixelBuffer::initializeSignBuffer(int16_t gpioPin) {
     digit0->push_back(i);
   }
 
-// Pixels for first "1"
+  // Pixels for first "1"
   std::vector<int>* digit1 = new std::vector<int>();
   for (int i = 124; i < 215; i++) {
     digit1->push_back(i);

@@ -9,17 +9,24 @@
 #include "Bluetooth.h"
 #include "ManualSelection.h"
 
+// Input-Output pin assignments
 #define DATA_OUT 25           // GPIO pin # (NOT Digital pin #) controlling the NeoPixels
+#define VOLTAGEINPUTPIN 14    // The pin # for the analog input to detect battery voltage level.
+
+// Initial default values for LED styles
 #define DEFAULTSTYLE 1        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 255 // Brightness should be between 0 and 255.
 #define DEFAULTSPEED 50       // Speed should be between 1 and 100.
 #define DEFAULTSTEP  50       // Step should be between 1 and 100.
 #define DEFAULTPATTERN 0      // Default patern (ie, Row/Column/Digit/etc). This is an index into the LightStyle::knownPatterns vector.
-#define INITIALDELAY 1000     // Startup delay for debugging.
-#define TIMINGITERATIONS 100  // The number of iterations between timing messages.
-#define VOLTAGEINPUTPIN 14    // The pin # for the analog input to detect battery voltage level.
+
+// Batter power monitoring
 #define LOWPOWERTHRESHOLD 5.9     // The voltage below which the system will go into "low power" mode.
 #define NORMALPOWERTHRESHOLD 6.9  // The voltage above which the system will recover from "low power" mode.
+
+// Debugging info
+#define INITIALDELAY 500      // Startup delay for debugging.
+#define TELEMETRYINTERVAL 2000    // The amount of time (in msec) between timing calculations.
 
 // Manual style button configuration.
 // The input/output pin numbers are the Digital pin numbers.
@@ -48,25 +55,26 @@ byte currentPattern = DEFAULTPATTERN;
 byte newPattern = DEFAULTPATTERN;
 
 // State-keeping for the manual style buttons
-byte manualStyleIndex = 0; // Manual style buttons can have more than one style assigned. This indicates which is active for a button.
+byte manualStyleIndex = 0;         // Manual style buttons can have more than one style assigned. This indicates which is active for a button.
 byte lastManualStyleSelected = -1; // The index of the last manual style that was selected.
-long lastManualStyleUpdate = 0; // The last time a manual button was pressed - used to debounce the signal.
-int debouncePeriodMsec = 500; // The amount of time to wait until reading the manual buttons again.
+long lastManualStyleUpdate = 0;    // The last time a manual button was pressed - used to debounce the signal.
+int debouncePeriodMsec = 500;      // The amount of time to wait until reading the manual buttons again.
 
 // Other internal state
-// For timing and debug information
-#define TELEMETRYINTERVAL 2000    // The amount of time (in msec) between timing calculations.
 int loopCounter = 0;              // Records the number of times the main loop ran since the last timing calculation.
-unsigned long lastTimestamp = 0;  // The last time debug information was emitted.
+unsigned long lastTelemetryTimestamp = 0;  // The last time debug information was emitted.
 byte inLowPowerMode = false;      // Indicates the system should be in "low power" mode. This should be a boolean, but there are no bool types.
 
+// Main entry point for the program --
+// This is run once at startup.
 void setup() {
   // Delay for debugging
   delay(INITIALDELAY);
   Serial.begin(9600);
   Serial.println("Starting...");
-  lastTimestamp = millis();
+  lastTelemetryTimestamp = millis();
 
+  // Initialize components
   pixelBuffer.initialize();
   pixelBuffer.setBrightness(DEFAULTBRIGHTNESS);
   initializeIO();
@@ -75,9 +83,11 @@ void setup() {
   startBLE();
 }
 
+// Main loop --
+// This metod is called continously.
 void loop()
 {  
-  printTimingAndDebugInfo();
+  emitTelemetry();
   checkForLowPowerState();
 
   if (inLowPowerMode) {
@@ -86,8 +96,10 @@ void loop()
     return;    
   }
 
+  // See if any settings have been changed via BLE and apply them if necessary.
   readBleSettings();
   if (manualOverrideEnabled) {
+    // If any manual style buttons have been pressed, override the BLE-driven settings.
     readManualStyleButtons();
   }
 
@@ -96,6 +108,7 @@ void loop()
   updateLEDs();
 }
 
+// Initialize all input/output pins
 void initializeIO() {
   Serial.println("Initializing manual override I/O pins.");
   for (int i = 0; i < 4; i++) {
@@ -108,31 +121,35 @@ void initializeIO() {
   pinMode(VOLTAGEINPUTPIN, INPUT);
 }
 
+// Set up the list of "known" light styles.
+// These are the styles presented in the "Styles" list in the phone app.
 void initializeLightStyles() {
   Serial.println("Initializing light styles");
   lightStyles.push_back(new RainbowStyle("Rainbow", &pixelBuffer));
   uint32_t pink =  Adafruit_NeoPixel::Color(255, 0, 212);
   uint32_t red = Adafruit_NeoPixel::Color(255, 0, 0);
   uint32_t blue = Adafruit_NeoPixel::Color(0, 0, 255);
+  uint32_t white = Adafruit_NeoPixel::Color(255, 255, 255);
   lightStyles.push_back(new SingleColorStyle("Pink", pink, &pixelBuffer));
   lightStyles.push_back(new TwoColorStyle("Blue-Pink", blue, pink, &pixelBuffer));
   lightStyles.push_back(new SingleColorStyle("Blue", blue, &pixelBuffer));
   lightStyles.push_back(new TwoColorStyle("Red-Pink", red, pink, &pixelBuffer));
   lightStyles.push_back(new SingleColorStyle("Red", red, &pixelBuffer));
-  lightStyles.push_back(new SingleColorStyle("White", Adafruit_NeoPixel::Color(255, 255, 255), &pixelBuffer));
+  lightStyles.push_back(new SingleColorStyle("White", white, &pixelBuffer));
 }
 
+// Create the list of manual styles to be assigned to each of the 4 "manual style" buttons.
 void initializeManualStyleDefinitions() {
-  // Create the list of manual styles to be assigned to each of the 4 "manual style" buttons.
   // Parameters for the ManualSelection struct are: styleIndex, brightness, patternIndex, step, speed
   manualStyleDefinitions[0].push_back(ManualSelection(1, 255, 1, 50, 50));   // Pink
   manualStyleDefinitions[1].push_back(ManualSelection(2, 255, 1, 50, 50));   // Blue-Pink
   manualStyleDefinitions[1].push_back(ManualSelection(3, 255, 1, 50, 50));   // Blue
   manualStyleDefinitions[2].push_back(ManualSelection(4, 255, 1, 50, 50));   // Red-Pink
   manualStyleDefinitions[2].push_back(ManualSelection(5, 255, 1, 50, 50));   // Red
-  manualStyleDefinitions[3].push_back(ManualSelection(0, 255, 1, 250, 250)); // Rainbow
+  manualStyleDefinitions[3].push_back(ManualSelection(0, 255, 1, 100, 100)); // Rainbow
 }
 
+// Set the initial BLE characteristic values and start the BLE service.
 void startBLE() {
   btService.initialize();
 
@@ -150,6 +167,7 @@ void startBLE() {
   btService.setStep(DEFAULTSTEP);
 }
 
+// Read the BLE settings to see if any have been changed.
 void readBleSettings() {
   newBrightness = btService.getBrightness();
 
@@ -186,10 +204,12 @@ void readBleSettings() {
   }
 }
 
+// Determine if the give byte value is between (or equal to) the min and max values.
 byte isInRange(byte value, byte minValue, byte maxValue) {
   return (value >= minValue && value <= maxValue);
 }
 
+// See if any manual input buttons were pressed and set the style accordingly.
 void readManualStyleButtons() {
   long now = millis();
   if (now < lastManualStyleUpdate + debouncePeriodMsec) {
@@ -229,15 +249,17 @@ void readManualStyleButtons() {
   }
 }
 
+// Turn all manual style LEDs off.
 void resetManualStyleIndicators() {
   for (int i = 0; i < 4; i++) {
     digitalWrite(outputPins[i], LOW);
   }  
 }
 
+// Turn all manual style LEDs on, wait a bit, and turn them all off.
+// This is used as a visual indicator that the batter voltage is too
+// low to power the sign.
 void blinkManualStyleIndicators() {
-  // Provides a visual indication that the system is in a Low Power state
-  // by blinking all of the "manual style selection" LEDs.
   // Turn all indicators on
   for (int i = 0; i < 4; i++) {
     digitalWrite(outputPins[i], HIGH);
@@ -251,6 +273,7 @@ void blinkManualStyleIndicators() {
   delay(500);
 }
 
+// Set the LEDs to a new brightness if the brightness has changed.
 void updateBrightness() {
   if (currentBrightness != newBrightness) {
     Serial.println("Brightness change detected.");
@@ -260,6 +283,8 @@ void updateBrightness() {
   currentBrightness = newBrightness;
 }
 
+// Set the style properties (speed, step, pattern, etc) if any have changed,
+// and call the current style class to update the display.
 void updateLEDs() {
   int shouldResetStyle = false;
   LightStyle *style = lightStyles[newStyle];
@@ -299,9 +324,13 @@ void updateLEDs() {
   pixelBuffer.displayPixels();
 }
 
+// Check if the current battery voltage is too low to run the sign,
+// or if the battery has been charged enough to restart operation.
 void checkForLowPowerState()
 {
   double currentVoltage = getCalculatedBatteryVoltage();
+
+  // Check if the voltage is too low.
   if (currentVoltage < LOWPOWERTHRESHOLD) {
     if (inLowPowerMode) {
       // Already in low power mode - nothing to do.
@@ -320,6 +349,8 @@ void checkForLowPowerState()
       inLowPowerMode = true;
     }
   }
+
+  // Check if the voltage is high enough for normal operation.
   if (currentVoltage > NORMALPOWERTHRESHOLD) {
     if (!inLowPowerMode) {
       // Not in low power mode - nothing to do.
@@ -337,6 +368,7 @@ void checkForLowPowerState()
   }
 }
 
+// Read the analog input from the "voltage input" pin and calculate the batter voltage.
 float getCalculatedBatteryVoltage()
 {
   // The analog input ranges from 0 (0V) to 1024 (3.3V), resulting in 0.00322 Volts per "tick".
@@ -346,27 +378,29 @@ float getCalculatedBatteryVoltage()
   return rawLevel * 3 * 3.3 / 1024;
 }
 
+// Read the raw value from the "voltage input" pin.
 int getVoltageInputLevel()
 {
   return analogRead(VOLTAGEINPUTPIN);
 }
 
-void printTimingAndDebugInfo()
+// Calculate loop timing information and emit the current battery voltage level.
+void emitTelemetry()
 {
   loopCounter++;
   unsigned long timestamp = millis();
 
-  if (timestamp > lastTimestamp + TELEMETRYINTERVAL)
+  if (timestamp > lastTelemetryTimestamp + TELEMETRYINTERVAL)
   {
     // Calculate loop timing data
-    unsigned long diff = timestamp - lastTimestamp;
+    unsigned long diff = timestamp - lastTelemetryTimestamp;
     double timePerIteration = (double)diff / loopCounter;
     Serial.print(loopCounter);
     Serial.print(" iterations (msec): ");
     Serial.print(diff);
     Serial.print("; avg per iteration (msec): ");
     Serial.println(timePerIteration);
-    lastTimestamp = timestamp;
+    lastTelemetryTimestamp = timestamp;
     loopCounter = 0;
     
     // Output voltage info periodically
