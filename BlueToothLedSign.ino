@@ -130,12 +130,14 @@ void initializeLightStyles() {
   uint32_t red = Adafruit_NeoPixel::Color(255, 0, 0);
   uint32_t blue = Adafruit_NeoPixel::Color(0, 0, 255);
   uint32_t white = Adafruit_NeoPixel::Color(255, 255, 255);
+  uint32_t orange = Adafruit_NeoPixel::Color(255, 50, 0);
   lightStyles.push_back(new SingleColorStyle("Pink", pink, &pixelBuffer));
   lightStyles.push_back(new TwoColorStyle("Blue-Pink", blue, pink, &pixelBuffer));
   lightStyles.push_back(new SingleColorStyle("Blue", blue, &pixelBuffer));
   lightStyles.push_back(new TwoColorStyle("Red-Pink", red, pink, &pixelBuffer));
   lightStyles.push_back(new SingleColorStyle("Red", red, &pixelBuffer));
-  lightStyles.push_back(new SingleColorStyle("White", white, &pixelBuffer));
+  lightStyles.push_back(new TwoColorStyle("Orange-Pink", orange, pink, &pixelBuffer));
+  //lightStyles.push_back(new SingleColorStyle("White", white, &pixelBuffer));
 }
 
 // Create the list of manual styles to be assigned to each of the 4 "manual style" buttons.
