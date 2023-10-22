@@ -21,7 +21,7 @@
 #define DEFAULTPATTERN 0      // Default patern (ie, Row/Column/Digit/etc). This is an index into the LightStyle::knownPatterns vector.
 
 // Batter power monitoring
-#define LOWPOWERTHRESHOLD 5.9     // The voltage below which the system will go into "low power" mode.
+#define LOWPOWERTHRESHOLD 6.0     // The voltage below which the system will go into "low power" mode.
 #define NORMALPOWERTHRESHOLD 6.9  // The voltage above which the system will recover from "low power" mode.
 
 // Debugging info
@@ -92,7 +92,7 @@ void loop()
 
   if (inLowPowerMode) {
     // blink LEDs and exit.
-    blinkManualStyleIndicators();
+    blinkLowPowerIndicator();
     return;    
   }
 
@@ -258,20 +258,14 @@ void resetManualStyleIndicators() {
   }  
 }
 
-// Turn all manual style LEDs on, wait a bit, and turn them all off.
-// This is used as a visual indicator that the batter voltage is too
-// low to power the sign.
-void blinkManualStyleIndicators() {
-  // Turn all indicators on
-  for (int i = 0; i < 4; i++) {
-    digitalWrite(outputPins[i], HIGH);
-  }
+void blinkLowPowerIndicator() {
+  // Turn all LEDs off except for the first one, which will blink red.
+  pixelBuffer.clearBuffer();
+  pixelBuffer.displayPixels();
   delay(500);
 
-  // Turn all indicators back off
-  for (int i = 0; i < 4; i++) {
-    digitalWrite(outputPins[i], LOW);
-  }
+  pixelBuffer.setPixel(0, Adafruit_NeoPixel::Color(255, 0, 0));
+  pixelBuffer.displayPixels();
   delay(500);
 }
 
@@ -342,13 +336,13 @@ void checkForLowPowerState()
       Serial.print(", threshold: ");
       Serial.println(LOWPOWERTHRESHOLD);
       Serial.println("Entering low power mode.");
-      // Enter low power mode. Disable LEDs and BLE.
-      // For the LEDs, set brightness to 0 and call display to turn them off.
-      // (This keeps the pixel buffer intact so we can resume where we left off when power returns.)
-      pixelBuffer.setBrightness(0);
-      pixelBuffer.displayPixels();
+      // Enter low power mode. Disable BLE.
       btService.stop();
       inLowPowerMode = true;
+      // Low power mode will clear the pixel buffer to save energy.
+      // Set current style to -1 so that if we return from low power mode
+      // we'll reset back to the last selected style.
+      currentStyle = -1;
     }
   }
 
@@ -364,7 +358,6 @@ void checkForLowPowerState()
       Serial.println("Exiting low power mode.");
       // Exit low power mode.  Re-enable BLE.
       btService.resume();
-      pixelBuffer.setBrightness(currentBrightness);
       inLowPowerMode = false;
     }
   }
