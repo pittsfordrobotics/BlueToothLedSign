@@ -87,7 +87,7 @@ void setup() {
 // This metod is called continously.
 void loop()
 {  
-  emitTelemetry();
+  //emitTelemetry();
   checkForLowPowerState();
 
   if (inLowPowerMode) {
