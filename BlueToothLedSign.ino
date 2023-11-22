@@ -14,11 +14,11 @@
 #define VOLTAGEINPUTPIN 14    // The pin # for the analog input to detect battery voltage level.
 
 // Initial default values for LED styles
-#define DEFAULTSTYLE 1        // The default style to start with. This is an index into the lightStyles vector.
+#define DEFAULTSTYLE 0        // The default style to start with. This is an index into the lightStyles vector.
 #define DEFAULTBRIGHTNESS 255 // Brightness should be between 0 and 255.
-#define DEFAULTSPEED 50       // Speed should be between 1 and 100.
-#define DEFAULTSTEP  50       // Step should be between 1 and 100.
-#define DEFAULTPATTERN 0      // Default patern (ie, Row/Column/Digit/etc). This is an index into the LightStyle::knownPatterns vector.
+#define DEFAULTSPEED 100       // Speed should be between 1 and 100.
+#define DEFAULTSTEP  100       // Step should be between 1 and 100.
+#define DEFAULTPATTERN 6      // Default patern (ie, Row/Column/Digit/etc). This is an index into the LightStyle::knownPatterns vector.
 
 // Batter power monitoring
 #define LOWPOWERTHRESHOLD 6.0     // The voltage below which the system will go into "low power" mode.
