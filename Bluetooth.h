@@ -48,8 +48,6 @@ class Bluetooth {
 
     String* joinStrings(std::vector<String> strings);
     byte readByteFromCharacteristic(BLEByteCharacteristic characteristic, byte defaultValue, String name);
-
-    static void brightnessCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic);
 };
 
 #endif

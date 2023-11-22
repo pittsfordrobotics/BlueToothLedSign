@@ -10,12 +10,9 @@ void Bluetooth::initialize() {
     Serial.println("BLE initialization failed!");
   }
 
-  BLE.debug(Serial);
-
   BLE.setLocalName("3181 LED Controller");
   BLE.setAdvertisedService(m_ledService);
   m_ledService.addCharacteristic(m_brightnessCharacteristic);
-  m_brightnessCharacteristic.setEventHandler(BLEWritten, brightnessCharacteristicWritten);
   m_ledService.addCharacteristic(m_styleCharacteristic);
   m_ledService.addCharacteristic(m_styleNamesCharacteristic);
   m_ledService.addCharacteristic(m_speedCharacteristic);
@@ -114,7 +111,6 @@ void Bluetooth::emitBatteryVoltage(float voltage) {
 }
 
 byte Bluetooth::readByteFromCharacteristic(BLEByteCharacteristic characteristic, byte defaultValue, String name) {
-  //BLEDevice central = BLE.central();
   if (BLE.connected()) {
     if (characteristic.written()) {
       Serial.print("Reading new value for ");
@@ -139,13 +135,4 @@ String* Bluetooth::joinStrings(std::vector<String> strings) {
   }
 
   return joinedStrings;
-}
-
-void Bluetooth::brightnessCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic)
-{
-  Serial.print("In characteristic callback. ");
-  uint8_t valByte;
-  characteristic.readValue(valByte);
-  Serial.print("Byte received: ");
-  Serial.println(valByte, HEX);
 }
