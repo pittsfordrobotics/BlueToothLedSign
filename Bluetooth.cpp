@@ -111,8 +111,7 @@ void Bluetooth::emitBatteryVoltage(float voltage) {
 }
 
 byte Bluetooth::readByteFromCharacteristic(BLEByteCharacteristic characteristic, byte defaultValue, String name) {
-  BLEDevice central = BLE.central();
-  if (central) {
+  if (BLE.connected()) {
     if (characteristic.written()) {
       Serial.print("Reading new value for ");
       Serial.print(name);
